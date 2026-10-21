@@ -10,6 +10,7 @@ e5-small: он только переупорядочивает то, что уж
 from __future__ import annotations
 
 from collections.abc import Sequence
+from types import SimpleNamespace
 from typing import Any, Protocol
 
 from mcp_1c_homework.config import RERANK_MAX_LENGTH, RERANK_MODEL
@@ -63,9 +64,11 @@ def rerank(
     Returns:
         Новый список кандидатов: score заменён на скор cross-encoder'а,
         исходный гибридный скор сохранён в ``source_scores['rrf']``.
-    """
-    from flashrank import RerankRequest
 
+    Note:
+        ``flashrank`` импортируется только когда используется настоящий
+        Ranker: unit-тесты подставляют свой объект и не тянут ONNX-зависимость.
+    """
     if not candidates:
         return []
     top_k = max(1, min(int(top_k), len(candidates)))
@@ -73,8 +76,14 @@ def rerank(
         {"id": c.id, "text": _passage_text(c)}
         for c in candidates
     ]
-    request = RerankRequest(query=query, passages=passages)
-    ranked = (ranker or get_ranker()).rerank(request)
+    if ranker is None:
+        from flashrank import RerankRequest
+
+        request: Any = RerankRequest(query=query, passages=passages)
+        ranker = get_ranker()
+    else:
+        request = SimpleNamespace(query=query, passages=passages)
+    ranked = ranker.rerank(request)
 
     by_id = {c.id: c for c in candidates}
     result: list[Candidate] = []

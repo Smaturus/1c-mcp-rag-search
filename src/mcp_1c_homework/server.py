@@ -10,7 +10,7 @@ from mcp_1c_homework import search_modes
 from mcp_1c_homework.index_guard import IndexBusy
 
 mcp = MCPServer(
-    "mcp-1c-homework",
+    "1c-mcp-rag-search",
     instructions=(
         "Own homework MCP for 1C: semantic + lexical search over BSL and metadata. "
         "Tools: codesearch, metadatasearch (cosine baseline), "

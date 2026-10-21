@@ -55,7 +55,7 @@ python scripts\bench.py
 | Embedding | `intfloat/multilingual-e5-small` (env `MCP_1C_EMBEDDING_MODEL`) |
 | HNSW space | cosine (`store.py`) |
 | Hybrid (default off) | `MCP_1C_HYBRID=1` → веса `ALPHA` / `BM25_WEIGHT` / `PEARSON_WEIGHT` |
-| Git commit индексатора | заполнить после первого коммита репо |
+| Git commit индексатора | [`a1f42eb`](https://github.com/Smaturus/mcp-1c-homework/commit/a1f42eb) |
 
 ### Метод работы (учебная дисциплина)
 

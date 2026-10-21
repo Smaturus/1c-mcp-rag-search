@@ -1,0 +1,39 @@
+name: Feature request
+description: Идея улучшения — retrieval, MCP-инструменты, eval, документация
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу это решает
+      description: Опишите проблему пользователя, а не только решение
+      placeholder: "Сейчас ...; хотелось бы ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Предлагаемое решение
+      description: Кратко; если есть альтернативы — перечислите
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Область
+      options:
+        - retrieval (BM25 / RRF / reranker)
+        - MCP-инструменты
+        - индексация и chunking
+        - eval и gold-set
+        - документация и CI
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Как измерим эффект
+      description: Какие метрики (nDCG@10, MRR@10, латентность) и на каком наборе
+      placeholder: "Прогон eval на 30 запросах: ожидаю рост nDCG@10, латентность не хуже ..."
+    validations:
+      required: false

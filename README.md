@@ -286,8 +286,7 @@ python scripts\eval_stability.py
 
 ## Тики прогресса длинной индексации
 
-См. [docs/INDEXING_TICKS.md](docs/INDEXING_TICKS.md): луп `scripts/index_tick_loop.py`.  
-Управление: `python scripts/index_tick_ctl.py status|stop`.
+Луп: `scripts/index_tick_loop.py`; управление: `python scripts/index_tick_ctl.py status|stop`.
 
 ## Ограничения / вне MVP
 

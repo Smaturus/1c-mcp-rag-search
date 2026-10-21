@@ -1,5 +1,5 @@
 """
-Interactive / MCP evaluation of one retrieval query (homework highlight).
+Interactive / MCP evaluation of one retrieval query (quality metrics).
 
 Example MCP call: evaluate_retrieval(query=\"НДС\")
 Computes Hit@k, Recall@k, MRR, top cosine, optional null-tail vs background.

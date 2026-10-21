@@ -54,8 +54,26 @@ def mrr_at_k(sources: Sequence[str], relevant: Iterable[str], *, k: int = 10) ->
     return 0.0
 
 
+def unique_sources(sources: Sequence[str]) -> list[str]:
+    """Свернуть ранжирование до уникальных файлов, сохранив порядок первого вхождения.
+
+    Один файл-источник может вернуться несколькими чанками. Если считать каждый
+    чанк отдельным релевантным документом, метрики завышаются (а nDCG может даже
+    превысить 1.0 при одном релевантном файле). Поэтому метрики считаются по
+    уникальным файлам: повторные чанки того же файла не добавляют вклада.
+    """
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for source in sources:
+        if source in seen:
+            continue
+        seen.add(source)
+        ordered.append(source)
+    return ordered
+
+
 def recall_at_k(sources: Sequence[str], relevant: Iterable[str], *, k: int = 10) -> float:
-    """Доля релевантных файлов, найденных в top-k.
+    """Доля релевантных файлов, найденных в top-k (по уникальным файлам).
 
     Знаменатель — ``min(|relevant|, k)``: если релевантных файлов больше k,
     максимум достижимого recall@k равен единице.
@@ -63,16 +81,21 @@ def recall_at_k(sources: Sequence[str], relevant: Iterable[str], *, k: int = 10)
     relevant_set = set(relevant)
     if not relevant_set:
         return 0.0
-    found = {source for source in sources[:k] if source in relevant_set}
+    found = {source for source in unique_sources(sources)[:k] if source in relevant_set}
     return len(found) / min(len(relevant_set), k)
 
 
 def ndcg_at_k(sources: Sequence[str], relevant: Iterable[str], *, k: int = 10) -> float:
-    """nDCG@k при бинарной релевантности (gain = 1 для релевантного файла)."""
+    """nDCG@k по уникальным файлам при бинарной релевантности (gain = 1).
+
+    Повторные чанки одного файла схлопываются: иначе одна и та же релевантная
+    единица учитывалась бы несколько раз и метрика была бы завышена.
+    """
     relevant_set = set(relevant)
+    ranked = unique_sources(sources)
     dcg = sum(
         1.0 / math.log2(rank + 1)
-        for rank, source in enumerate(sources[:k], start=1)
+        for rank, source in enumerate(ranked[:k], start=1)
         if source in relevant_set
     )
     ideal = sum(1.0 / math.log2(rank + 1) for rank in range(1, min(len(relevant_set), k) + 1))
@@ -146,4 +169,5 @@ __all__ = [
     "mrr_at_k",
     "ndcg_at_k",
     "recall_at_k",
+    "unique_sources",
 ]

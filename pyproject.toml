@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-1c-homework"
-version = "0.2.0"
+version = "0.2.1"
 description = "MCP server with hybrid RAG retrieval (cosine + BM25 + RRF) over 1C BSL code and configuration metadata, no Docker"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -18,6 +18,7 @@ from mcp_1c_homework.eval_metrics import (  # noqa: E402
     mrr_at_k,
     ndcg_at_k,
     recall_at_k,
+    unique_sources,
 )
 
 RELEVANT = {"a.bsl", "b.bsl"}
@@ -101,3 +102,44 @@ def test_markdown_table_contains_all_modes() -> None:
     table = format_markdown_table({"vector": aggregate(items)})
     assert "| `vector` |" in table
     assert "Hit@1" in table
+
+
+# --- регрессия: повторные чанки одного файла не должны раздувать метрики ---
+
+
+def test_unique_sources_collapses_duplicates_in_order() -> None:
+    """Дубликаты схлопываются, порядок первого вхождения сохраняется."""
+    assert unique_sources(["a", "b", "a", "c", "b"]) == ["a", "b", "c"]
+    assert unique_sources([]) == []
+
+
+def test_ndcg_does_not_count_duplicate_chunks_of_one_file() -> None:
+    """Один релевантный файл, возвращённый 5 чанками, даёт nDCG = 1.0, не 4.x."""
+    relevant = {"a.bsl"}
+    duplicated = ["a.bsl"] * 5
+    assert ndcg_at_k(duplicated, relevant, k=10) == pytest.approx(1.0)
+
+
+def test_ndcg_never_exceeds_one_with_duplicates() -> None:
+    """nDCG@k по определению не больше единицы, даже при повторах в выдаче."""
+    relevant = {"a.bsl", "b.bsl"}
+    sources = ["a.bsl", "a.bsl", "a.bsl", "b.bsl", "b.bsl"]
+    assert 0.0 <= ndcg_at_k(sources, relevant, k=10) <= 1.0
+
+
+def test_ndcg_duplicates_do_not_hide_other_relevant_file() -> None:
+    """После схлопывания второй релевантный файл занимает вторую позицию."""
+    relevant = {"a.bsl", "b.bsl"}
+    # Без схлопывания b оказался бы на 4-й позиции, после трёх копий a.
+    sources = ["a.bsl", "a.bsl", "a.bsl", "b.bsl"]
+    assert ndcg_at_k(sources, relevant, k=10) == pytest.approx(1.0)
+
+
+def test_mrr_unaffected_by_duplicates() -> None:
+    """MRR определяется первым релевантным файлом — дубликаты его не меняют."""
+    assert mrr_at_k(["a.bsl", "a.bsl", "b.bsl"], RELEVANT, k=10) == pytest.approx(1.0)
+
+
+def test_recall_counts_unique_files_only() -> None:
+    """Recall@k остаётся долей файлов, а не чанков."""
+    assert recall_at_k(["a.bsl", "a.bsl", "a.bsl"], RELEVANT, k=10) == pytest.approx(0.5)

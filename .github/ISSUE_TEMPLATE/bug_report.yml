@@ -1,0 +1,63 @@
+name: Bug report
+description: Что-то работает не так — воспроизводимая ошибка
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за отчёт. Пожалуйста, не вставляйте сюда пути к личным папкам,
+        выгрузки 1С, токены и другие секреты.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Что произошло
+      description: Ожидаемое и фактическое поведение
+      placeholder: "Ожидал: ... Фактически: ..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. python -m mcp_1c_homework.indexer --reset
+        2. search("...", mode="hybrid")
+      ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия / коммит
+      placeholder: "0.2.0, коммит 5da966f"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Режим поиска
+      options:
+        - vector
+        - hybrid
+        - hybrid_rerank
+        - pearson
+        - не применимо
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи / трейсбек
+      description: Вставьте только релевантный фрагмент, без секретов
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Проверено
+      options:
+        - label: Уже искал в существующих issues
+          required: true
+        - label: В отчёте нет секретов и личных данных
+          required: true

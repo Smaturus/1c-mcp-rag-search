@@ -16,7 +16,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
-OUT = Path(__file__).resolve().parent / "MCP_1C_Homework.pptx"
+OUT = Path(__file__).resolve().parent / "1c-mcp-rag-search-slides.pptx"
 
 NAVY = RGBColor(0x0F, 0x3D, 0x5C)
 ACCENT = RGBColor(0x1B, 0x7F, 0xAE)

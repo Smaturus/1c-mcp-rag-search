@@ -313,7 +313,7 @@ data/               локальные артефакты (в git только g
 | [docs/adr/0004-deduplicated-metrics.md](docs/adr/0004-deduplicated-metrics.md) | схлопывание повторных чанков в метриках |
 | [data/eval/report_pipeline.md](data/eval/report_pipeline.md) | сравнение 4 конфигураций |
 | [data/eval/bench.md](data/eval/bench.md) | латентность p50/p95, размеры индексов |
-| [docs/presentation/MCP_1C_Homework.pptx](docs/presentation/MCP_1C_Homework.pptx) | презентация проекта (12 слайдов) |
+| [docs/presentation/1c-mcp-rag-search-slides.pptx](docs/presentation/1c-mcp-rag-search-slides.pptx) | презентация проекта (12 слайдов) |
 | [CHANGELOG.md](CHANGELOG.md) | история изменений |
 
 ## Лицензия

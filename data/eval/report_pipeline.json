@@ -1,0 +1,823 @@
+{
+  "k": 10,
+  "n_queries": 30,
+  "configs": [
+    {
+      "mode": "vector",
+      "description": "только cosine (baseline)"
+    },
+    {
+      "mode": "pearson",
+      "description": "взвешенный cos+BM25+Pearson (бывший MVP)"
+    },
+    {
+      "mode": "hybrid",
+      "description": "cosine + BM25 через RRF"
+    },
+    {
+      "mode": "hybrid_rerank",
+      "description": "RRF + cross-encoder reranker"
+    }
+  ],
+  "results": {
+    "hybrid_rerank": {
+      "hit@1": 0.0,
+      "mrr@10": 0.05253968253968254,
+      "ndcg@10": 0.1335395327558494,
+      "recall@10": 0.16666666666666666,
+      "latency_ms": 1112.2160399987479
+    }
+  },
+  "per_type": {
+    "exact": {
+      "hybrid_rerank": {
+        "hit@1": 0.0,
+        "mrr@10": 0.06666666666666667,
+        "ndcg@10": 0.15007457088474874,
+        "recall@10": 0.2222222222222222,
+        "latency_ms": 1036.6555555555556
+      }
+    },
+    "semantic": {
+      "hybrid_rerank": {
+        "hit@1": 0.0,
+        "mrr@10": 0.03968253968253968,
+        "ndcg@10": 0.1173408515576313,
+        "recall@10": 0.16666666666666666,
+        "latency_ms": 1123.9666666666667
+      }
+    },
+    "trap": {
+      "hybrid_rerank": {
+        "hit@1": 0.0,
+        "mrr@10": 0.05555555555555555,
+        "ndcg@10": 0.13860273622457417,
+        "recall@10": 0.1111111111111111,
+        "latency_ms": 1172.1222222222223
+      }
+    }
+  },
+  "per_query": {
+    "hybrid_rerank": [
+      {
+        "id": "exact-peredzapisyu",
+        "type": "exact",
+        "query": "ПередЗаписью",
+        "relevant_sources": [
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураПолученный/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/ВидыНоменклатуры/Ext/ObjectModule.bsl",
+          "Catalogs/КлассификаторИспользованияРабочегоВремени/Ext/ObjectModule.bsl",
+          "Catalogs/Организации/Ext/ObjectModule.bsl",
+          "Catalogs/КонцевыеПрипуски/Ext/ObjectModule.bsl",
+          "ChartsOfAccounts/Бюджетирование/Ext/ObjectModule.bsl",
+          "Reports/РапортРуководителю/Ext/ObjectModule.bsl",
+          "DataProcessors/ОбменДаннымиXML/Ext/ObjectModule.bsl",
+          "ChartsOfAccounts/Международный/Ext/ObjectModule.bsl",
+          "InformationRegisters/КурсыВалют/Ext/RecordSetModule.bsl",
+          "Documents/УстановкаПорядкаЗакрытияПодразделений/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1127.0
+      },
+      {
+        "id": "exact-nomer-dokumenta",
+        "type": "exact",
+        "query": "НомерДокумента",
+        "relevant_sources": [
+          "Documents/СчетФактураПолученный/Ext/ObjectModule.bsl",
+          "Documents/ВводНачальныхОстатковНДС/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "DataProcessors/ПодборНоменклатуры/Ext/ObjectModule.bsl",
+          "CommonModules/ПодключаемоеОборудованиеАтолККМOfflineКлиент/Ext/Module.bsl",
+          "DataProcessors/ПодборНоменклатуры/Ext/ObjectModule.bsl",
+          "DataProcessors/ПодборНоменклатуры/Ext/ObjectModule.bsl",
+          "CommonModules/ПодключаемоеОборудованиеАтолККМOfflineКлиент/Ext/Module.bsl",
+          "DataProcessors/ПодборНоменклатуры/Ext/ObjectModule.bsl",
+          "Reports/УтвержденныеСкладскиеДокументы/Ext/ObjectModule.bsl",
+          "Documents/ЭКЗаданиеНаКомплектацию/Ext/ObjectModule.bsl",
+          "Documents/ЭКАктПриемкиПродукцииПоКачеству/Ext/ObjectModule.bsl",
+          "CommonModules/ЭК_МетодыЭДО/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1101.5
+      },
+      {
+        "id": "semantic-nds-avans",
+        "type": "semantic",
+        "query": "начисление НДС с авансов полученных",
+        "relevant_sources": [
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/ВводНачальныхОстатковНДС/Ext/ObjectModule.bsl",
+          "Documents/ФормированиеЗаписейКнигиПродаж/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/БухгалтерскийУчет/Ext/Module.bsl",
+          "Documents/СчетФактураПолученный/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "CommonModules/УправлениеЗапасамиПартионныйУчет/Ext/Module.bsl",
+          "Documents/ВводНачальныхОстатковНДС/Ext/ObjectModule.bsl",
+          "Documents/ФормированиеЗаписейКнигиПродаж/Ext/ObjectModule.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.3333333333333333,
+        "ndcg@10": 1.0747568853582423,
+        "recall@10": 1.0,
+        "latency_ms": 922.0
+      },
+      {
+        "id": "semantic-zapolnenie-tch",
+        "type": "semantic",
+        "query": "заполнение таблицы товаров документа программно",
+        "relevant_sources": [
+          "Documents/ФормированиеЗаписейКнигиПокупок/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураПолученный/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "DataProcessors/ЭКФормированиеРеализацийПоЗаданиюНаКомплектацию/Ext/ObjectModule.bsl",
+          "Documents/ПоступлениеТоваровУслугВНеавтоматизированнуюТорговуюТочку/Ext/ObjectModule.bsl",
+          "Documents/ЗакрытиеВнутреннихЗаказов/Ext/ObjectModule.bsl",
+          "CommonModules/ФормированиеДопДанныхЭДО/Ext/Module.bsl",
+          "Documents/ИнвентаризацияТоваровОтданныхНаКомиссию/Ext/ObjectModule.bsl",
+          "Documents/ПереоценкаТоваровВНТТ/Ext/ObjectModule.bsl",
+          "CommonModules/УправлениеЗапасамиПартионныйУчет/Ext/Module.bsl",
+          "Documents/КорректировкаДолга/Ext/ObjectModule.bsl",
+          "Documents/СТ_КорректировкаПлана/Ext/ObjectModule.bsl",
+          "Documents/ПолучениеУслугПоПереработке/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1119.1
+      },
+      {
+        "id": "semantic-pechat-etiketok",
+        "type": "semantic",
+        "query": "печать этикеток и штрихкодов на принтере",
+        "relevant_sources": [
+          "DataProcessors/ПечатьЭтикетокСтикеровЗаказКМ/Forms/Форма/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/ПодключаемоеОборудованиеACOMВесыСПечатьюЭтикетокКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеАтолФискальныеРегистраторыКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеУниверсальныйДрайверАсинхронноКлиент/Ext/Module.bsl",
+          "CommonModules/МенеджерОборудованияКлиент/Ext/Module.bsl",
+          "CommonModules/МенеджерОборудованияКлиент/Ext/Module.bsl",
+          "CommonModules/МенеджерОборудованияКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеШтрихМФискальныеРегистраторыКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеУниверсальныйДрайверАсинхронноКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеУниверсальныйДрайверАсинхронноКлиент/Ext/Module.bsl",
+          "CommonModules/ПодключаемоеОборудованиеВерсияТФискальныеРегистраторыКлиент/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1076.9
+      },
+      {
+        "id": "semantic-provedenie-nds",
+        "type": "semantic",
+        "query": "проведение документа по регистрам накопления НДС",
+        "relevant_sources": [
+          "Documents/ВводНачальныхОстатковНДС/Ext/ObjectModule.bsl",
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "Reports/ЖурналУчетаВыданныхСчетовФактур/Ext/ObjectModule.bsl",
+          "Reports/ЖурналУчетаВыданныхСчетовФактур/Ext/ObjectModule.bsl",
+          "Documents/СведенияОДоходахФизлиц/Ext/ObjectModule.bsl",
+          "CommonModules/УчетРулонов/Ext/Module.bsl",
+          "Reports/ЖурналУчетаПолученныхСчетовФактур/Ext/ObjectModule.bsl",
+          "Documents/ФормированиеЗаписейКнигиПокупок/Ext/ObjectModule.bsl",
+          "Reports/РаспределениеНДСКосвенныхРасходов/Ext/ObjectModule.bsl",
+          "CommonModules/УчетРулонов/Ext/Module.bsl",
+          "Documents/ПоступлениеДопРасходов/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1514.9
+      },
+      {
+        "id": "semantic-nds-pokupka",
+        "type": "semantic",
+        "query": "НДС по приобретенным ценностям вычет",
+        "relevant_sources": [
+          "Documents/СчетФактураПолученный/Ext/ObjectModule.bsl",
+          "Documents/ФормированиеЗаписейКнигиПокупок/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Documents/УчетПоложенийПереходногоПериодаПоНДС/Ext/ObjectModule.bsl",
+          "Reports/ДиспетчеризацияПроизводстваПродукции/Ext/ObjectModule.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "DataProcessors/ПроведениеДокументовПоРегистрамНДС/Ext/ObjectModule.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "DataProcessors/ОбновлениеИнформационнойБазы/Ext/ObjectModule.bsl",
+          "CommonModules/ОбработкаТабличныхЧастей/Ext/Module.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1297.8
+      },
+      {
+        "id": "trap-nds-kniga-prodazh",
+        "type": "trap",
+        "query": "НДС счет-фактура выданный книга продаж",
+        "relevant_sources": [
+          "Documents/СчетФактураВыданный/Ext/ObjectModule.bsl",
+          "Documents/ФормированиеЗаписейКнигиПродаж/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/ИсточникиДанныхДляРасчетовБюджетирования/Ext/ObjectModule.bsl",
+          "DataProcessors/ПроведениеДокументовПоРегистрамНДС/Ext/ObjectModule.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "DataProcessors/ПроведениеДокументовПоРегистрамНДС/Ext/ObjectModule.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl",
+          "DataProcessors/ПроведениеДокументовПоРегистрамНДС/Ext/ObjectModule.bsl",
+          "Reports/ЖурналУчетаВыданныхСчетовФактур/Ext/ObjectModule.bsl",
+          "CommonModules/УчетНДС/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1187.1
+      },
+      {
+        "id": "trap-identifikatory",
+        "type": "trap",
+        "query": "идентификаторы объектов метаданных конфигурации",
+        "relevant_sources": [
+          "Catalogs/ИдентификаторыОбъектовМетаданных/Ext/ManagerModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl",
+          "Catalogs/ИдентификаторыОбъектовМетаданных/Ext/ManagerModule.bsl",
+          "CommonModules/ОбновлениеИнформационнойБазыСлужебныйВМоделиСервиса/Ext/Module.bsl",
+          "CommonModules/ОбновлениеИнформационнойБазы/Ext/Module.bsl",
+          "CommonModules/ОбновлениеИнформационнойБазы/Ext/Module.bsl",
+          "CommonForms/ВыборОбъектовМетаданных/Ext/Form/Module.bsl",
+          "CommonModules/ОбменДаннымиСервер/Ext/Module.bsl",
+          "Catalogs/ИдентификаторыОбъектовМетаданных/Ext/ManagerModule.bsl",
+          "Catalogs/ИдентификаторыОбъектовМетаданных/Ext/ManagerModule.bsl",
+          "CommonModules/ОбновлениеИнформационнойБазыСлужебныйВМоделиСервиса/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 1.2474246260211674,
+        "recall@10": 1.0,
+        "latency_ms": 979.7
+      },
+      {
+        "id": "trap-osnovnye-sredstva",
+        "type": "trap",
+        "query": "основные средства поступление и печать",
+        "relevant_sources": [
+          "Catalogs/ОсновныеСредства/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/Мультипредметность/Ext/Module.bsl",
+          "CommonModules/ДополнительныеФункции/Ext/Module.bsl",
+          "CommonModules/МаркировкаЦРПТ/Ext/Module.bsl",
+          "CommonModules/ЭК_МетодыЭДО/Ext/Module.bsl",
+          "CommonModules/ЭК_МетодыЭДО/Ext/Module.bsl",
+          "CommonModules/БанковскиеПравила/Ext/Module.bsl",
+          "Catalogs/Контрагенты/Ext/ManagerModule.bsl",
+          "Documents/ПлатежноеПоручениеИсходящее/Ext/ObjectModule.bsl",
+          "Documents/РасчетыПоНалогуНаПрибыль/Ext/ObjectModule.bsl",
+          "Documents/МодернизацияОС/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1524.7
+      },
+      {
+        "id": "auto-01",
+        "type": "exact",
+        "query": "ЗагрузитьПравилаОбмена",
+        "relevant_sources": [
+          "Catalogs/DTRN_ЭК_НастройкаПоПравиламОбмена/Forms/ФормаЭлемента/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/Б_ОбщиеПроцедурыИФункцииОбменаССайтом/Ext/Module.bsl",
+          "Catalogs/DTRN_ЭК_НастройкаПоПравиламОбмена/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "CommonModules/ПроцедурыОбменаДаннымиКлиент/Ext/Module.bsl",
+          "Catalogs/DTRN_ЭК_НастройкаПоПравиламОбмена/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "CommonModules/ЭК_МодульПривелегированныйДоступ/Ext/Module.bsl",
+          "CommonModules/МодульДоступаКВнешнимБазамДанных/Ext/Module.bsl",
+          "CommonModules/ПроцедурыОбменаДаннымиКлиент/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиСобытия/Ext/Module.bsl",
+          "Catalogs/НастройкиОбменаССайтом/Ext/ObjectModule.bsl",
+          "DataProcessors/УниверсальныйОбменДаннымиXML/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.5,
+        "ndcg@10": 1.0616063116448506,
+        "recall@10": 1.0,
+        "latency_ms": 1077.7
+      },
+      {
+        "id": "auto-02",
+        "type": "semantic",
+        "query": "как реализовано справочник группы почтовой рассылки",
+        "relevant_sources": [
+          "Catalogs/ГруппыПочтовойРассылки/Ext/ManagerModule.bsl"
+        ],
+        "retrieved_sources": [
+          "DataProcessors/ЗагрузкаПочтовыхСообщений/Ext/ObjectModule.bsl",
+          "CommonModules/РаботаСПочтовымиСообщениямиСлужебный/Ext/Module.bsl",
+          "CommonModules/РаботаСПочтовымиСообщениямиСлужебный/Ext/Module.bsl",
+          "CommonModules/РаботаСПочтовымиСообщениямиСлужебный/Ext/Module.bsl",
+          "CommonModules/ЭлектроннаяПочта/Ext/Module.bsl",
+          "CommonModules/РаботаСПочтовымиСообщениямиСлужебный/Ext/Module.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "Documents/ОформлениеПередачиПродукции/Ext/ObjectModule.bsl",
+          "InformationRegisters/ОчередьЗаказовНаОбновлениеШК/Ext/ManagerModule.bsl",
+          "CommonModules/РаботаСПочтовымиСообщениямиСлужебный/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1100.6
+      },
+      {
+        "id": "auto-03",
+        "type": "trap",
+        "query": "справочник классификатор причин несоответствия ПолучитьТекстАвтоподбора",
+        "relevant_sources": [
+          "Catalogs/КлассификаторПричинНесоответствия/Ext/ManagerModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Documents/ЦРПТПриемка/Ext/ObjectModule.bsl",
+          "BusinessProcesses/БизнесПроцессОбработкаПретензииПоПоставке/Ext/ObjectModule.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "Documents/СпецификацияПоставщика/Ext/ObjectModule.bsl",
+          "Catalogs/ЭК_УсловияВозникновенияУведомлений/Ext/ManagerModule.bsl",
+          "DataProcessors/ЭКПанельФункцийОтделаПроизводства/Ext/ObjectModule.bsl",
+          "InformationRegisters/АдресныеОбъекты/Ext/ManagerModule.bsl",
+          "CommonModules/УправлениеПроизводством/Ext/Module.bsl",
+          "BusinessProcesses/НесоответствияВПроизводстве/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1134.9
+      },
+      {
+        "id": "auto-04",
+        "type": "exact",
+        "query": "ПолучитьСтоимостьИАмортизациюОС",
+        "relevant_sources": [
+          "Catalogs/ОсновныеСредства/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "Reports/ВедомостьАмортизацииОС/Ext/ObjectModule.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "CommonModules/УправлениеОсновнымиСредствами/Ext/Module.bsl",
+          "Catalogs/ОсновныеСредства/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.1,
+        "ndcg@10": 0.2890648263178879,
+        "recall@10": 1.0,
+        "latency_ms": 683.3
+      },
+      {
+        "id": "auto-05",
+        "type": "semantic",
+        "query": "как реализовано справочник файлы",
+        "relevant_sources": [
+          "Catalogs/СБИС_ФайлыЭДО/Ext/ManagerModule.bsl"
+        ],
+        "retrieved_sources": [
+          "DataProcessors/ЗагрузкаПочтовыхСообщений/Ext/ObjectModule.bsl",
+          "CommonModules/УправлениеСвойствамиСлужебный/Ext/Module.bsl",
+          "Catalogs/СпецификацииНоменклатуры/Ext/ManagerModule.bsl",
+          "CommonModules/ЭК_ОбработкаУсловийУведомлений/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиСервер/Ext/Module.bsl",
+          "CommonModules/ХранилищеДополнительнойИнформации/Ext/Module.bsl",
+          "CommonModules/РаботаСУведомлениямиПереопределяемый/Ext/Module.bsl",
+          "Catalogs/ИдентификаторыОбъектовМетаданных/Ext/ManagerModule.bsl",
+          "CommonModules/УправлениеКонтактнойИнформациейСлужебный/Ext/Module.bsl",
+          "Catalogs/СпецификацииДеталейКроя/Ext/ManagerModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1078.6
+      },
+      {
+        "id": "auto-06",
+        "type": "trap",
+        "query": "справочник технологические операции НайтиПоШтрихкоду",
+        "relevant_sources": [
+          "Catalogs/ТехнологическиеОперации/Ext/ManagerModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/МаршрутнаяКарта/Ext/ManagerModule.bsl",
+          "CommonModules/ОценкаПроизводительности/Ext/Module.bsl",
+          "CommonModules/ОценкаПроизводительности/Ext/Module.bsl",
+          "Catalogs/ВкладышиОТК/Ext/ManagerModule.bsl",
+          "DataProcessors/ЭКПанельФункцийШЦ/Forms/Упаковка/Ext/Form/Module.bsl",
+          "DataProcessors/ОстаткиВМестахХраненияУФ/Forms/ТСД/Ext/Form/Module.bsl",
+          "CommonModules/ОбщегоНазначенияГлобальный/Ext/Module.bsl",
+          "Documents/СборочнаяСпецификация/Forms/ФормаДокументаТСДУФ/Ext/Form/Module.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаСписка/Ext/Form/Module.bsl",
+          "DataProcessors/СТ_ПланировщикПосменныхПланов_20/Forms/ФормаУправляемая/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1059.0
+      },
+      {
+        "id": "auto-07",
+        "type": "exact",
+        "query": "ПередЗаписью",
+        "relevant_sources": [
+          "Catalogs/ЭКШевроныИЛоготипы/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/ВидыНоменклатуры/Ext/ObjectModule.bsl",
+          "Catalogs/КлассификаторИспользованияРабочегоВремени/Ext/ObjectModule.bsl",
+          "Catalogs/Организации/Ext/ObjectModule.bsl",
+          "Catalogs/КонцевыеПрипуски/Ext/ObjectModule.bsl",
+          "ChartsOfAccounts/Бюджетирование/Ext/ObjectModule.bsl",
+          "Reports/РапортРуководителю/Ext/ObjectModule.bsl",
+          "DataProcessors/ОбменДаннымиXML/Ext/ObjectModule.bsl",
+          "ChartsOfAccounts/Международный/Ext/ObjectModule.bsl",
+          "InformationRegisters/КурсыВалют/Ext/RecordSetModule.bsl",
+          "Documents/УстановкаПорядкаЗакрытияПодразделений/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1101.1
+      },
+      {
+        "id": "auto-08",
+        "type": "semantic",
+        "query": "как реализовано справочник чат боты",
+        "relevant_sources": [
+          "Catalogs/нс_ЧатБоты/Forms/ФормаЭлемента/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/Экс_НастройкиНагрузочногоТестирования/Commands/НагрузочноеТестирование/Ext/CommandModule.bsl",
+          "InformationRegisters/АдресныеОбъекты/Commands/ПодключитьИнтернетПоддержку/Ext/CommandModule.bsl",
+          "Reports/ВзаиморасчетыСКомиссионерами/Ext/ObjectModule.bsl",
+          "Reports/ВзаиморасчетыСКомитентами/Ext/ObjectModule.bsl",
+          "Documents/ЭКЗаданиеНаКомплектацию/Ext/ObjectModule.bsl",
+          "Reports/ДиспетчеризацияПроизводстваПродукции/Ext/ObjectModule.bsl",
+          "Catalogs/нс_ЧатБоты/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Documents/ЭКЗаданиеНаКомплектацию/Ext/ObjectModule.bsl",
+          "CommonModules/ПроцедурыУправленияПерсоналом/Ext/Module.bsl",
+          "Catalogs/Экс_Проекты/Commands/СписокПроектов/Ext/CommandModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.14285714285714285,
+        "ndcg@10": 0.3333333333333333,
+        "recall@10": 1.0,
+        "latency_ms": 1150.1
+      },
+      {
+        "id": "auto-09",
+        "type": "trap",
+        "query": "обработка карты детали кроя по номенклатуре СписокКартыВыбор",
+        "relevant_sources": [
+          "DataProcessors/КартыИДеталиКрояПоНоменклатуре/Forms/Форма/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "Documents/ЗаказПоставщику/Ext/ObjectModule.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Reports/ДиспетчеризацияПроизводстваПродукции/Ext/ObjectModule.bsl",
+          "Catalogs/ДеталиКрояШевроныЛоготипы/Ext/ObjectModule.bsl",
+          "Documents/СписаниеТоваров/Ext/ObjectModule.bsl",
+          "Reports/ДиспетчеризацияПроизводстваПродукции/Ext/ObjectModule.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Catalogs/ДополнительныеДанныеПоМоделямГербер/Forms/ФормаЭлемента/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1206.1
+      },
+      {
+        "id": "auto-10",
+        "type": "exact",
+        "query": "ПриСозданииНаСервере",
+        "relevant_sources": [
+          "DataProcessors/ПанельФункцийМастераШЦ/Forms/ФормаИзмененииДаты/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "InformationRegisters/ОчередьСообщенийОбменаСПодключаемымОборудованием/Forms/ФормаЗаписи/Ext/Form/Module.bsl",
+          "Catalogs/ВидыБизнесСобытий/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "DataProcessors/РегистрацияИзмененийДляОбменаДанными/Forms/ВыборОбъектовОтбором/Ext/Form/Module.bsl",
+          "Documents/НазначениеОпросов/Forms/ФормаДокумента/Ext/Form/Module.bsl",
+          "InformationRegisters/СвязьПользовательскихОбработчиковБизнесСобытийИВидаСобытий/Forms/ФормаСпискаДляОбработчика/Ext/Form/Module.bsl",
+          "Catalogs/ЛекалаГербер/Forms/ФормаНастройкиПросмотра/Ext/Form/Module.bsl",
+          "InformationRegisters/РискиКлиентов/Forms/ФормаЗаписи/Ext/Form/Module.bsl",
+          "DataProcessors/РегистрацияИзмененийДляОбменаДанными/Forms/Настройки/Ext/Form/Module.bsl",
+          "InformationRegisters/НастройкиСогласования/Forms/ФормаЗаписи/Ext/Form/Module.bsl",
+          "DataProcessors/МониторКомплектации/Forms/ФормаВыбораШрифта/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1111.3
+      },
+      {
+        "id": "auto-11",
+        "type": "semantic",
+        "query": "как реализовано обработка регистрация изменений для обмена данными",
+        "relevant_sources": [
+          "DataProcessors/РегистрацияИзмененийДляОбменаДанными/Forms/ВыборОбъектовОтбором/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/ОбменДаннымиСервер/Ext/Module.bsl",
+          "CommonModules/ОбменДанными/Ext/Module.bsl",
+          "CommonModules/ОбменДанными/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиСервер/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиПереопределяемый/Ext/Module.bsl",
+          "CommonModules/ПроцедурыОбменаДаннымиКлиент/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиПереопределяемый/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиВызовСервера/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиПереопределяемый/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиСервер/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1037.0
+      },
+      {
+        "id": "auto-12",
+        "type": "trap",
+        "query": "обработка панель функций разбраковки ЗаполнитьНачальныеНастройки",
+        "relevant_sources": [
+          "DataProcessors/ЭКПанельФункцийРазбраковки/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/ТиповыеОтчеты/Ext/Module.bsl",
+          "CommonModules/ЭК_МодульПривелегированныйДоступ/Ext/Module.bsl",
+          "Reports/АнализТочкиЗаказа/Ext/ObjectModule.bsl",
+          "Constants/rx_АдресПодключенияКСервису/Ext/ValueManagerModule.bsl",
+          "Reports/СвободныеПомещения/Ext/ObjectModule.bsl",
+          "Reports/ПланФактныйАнализЗаявок/Ext/ObjectModule.bsl",
+          "DataProcessors/УчастокУпаковкиШЦ/Forms/Форма/Ext/Form/Module.bsl",
+          "Ext/OrdinaryApplicationModule.bsl",
+          "CommonModules/ЭК_ДополнительныеФункцииНеГлобальный/Ext/Module.bsl",
+          "DataProcessors/МониторКомплектации/Forms/ФормаУФ/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1235.2
+      },
+      {
+        "id": "auto-13",
+        "type": "exact",
+        "query": "ОбработкаКоманды",
+        "relevant_sources": [
+          "DataProcessors/ирКонсольЗапросов/Commands/Команда1/Ext/CommandModule.bsl"
+        ],
+        "retrieved_sources": [
+          "DataProcessors/ирПлатформа/Commands/ОткрытьОбъектДляОтладки/Ext/CommandModule.bsl",
+          "DataProcessors/ирПлатформа/Commands/ОткрытьПанельИнструментов/Ext/CommandModule.bsl",
+          "DataProcessors/ирПлатформа/Commands/ОткрытьОтладчик/Ext/CommandModule.bsl",
+          "Catalogs/ДрайверыОборудования/Commands/ОткрытьДрайверыОборудования/Ext/CommandModule.bsl",
+          "Catalogs/бип_Алгоритмы/Forms/СписокАлгоритмов/Ext/Form/Module.bsl",
+          "Catalogs/ирАлгоритмы/Commands/ОткрытьНастройкиАлгоритмов/Ext/CommandModule.bsl",
+          "Reports/ПланДиаграммаГанта/Forms/ФормаОтчета/Ext/Form/Module.bsl",
+          "DataProcessors/ирПлатформа/Commands/ОткрытьЗапускСеанса/Ext/CommandModule.bsl",
+          "Documents/СТ_ВыпускПродукции/Ext/ObjectModule.bsl",
+          "Catalogs/ПрофилиКлючевыхОпераций/Forms/ФормаЭлемента/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1228.7
+      },
+      {
+        "id": "auto-14",
+        "type": "semantic",
+        "query": "как реализовано обработка редактор параметров сеанса",
+        "relevant_sources": [
+          "DataProcessors/ирРедакторПараметровСеанса/Commands/Команда1/Ext/CommandModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/АдминистрированиеКластераКлиентСервер/Ext/Module.bsl",
+          "CommonModules/МенеджерОборудованияВызовСервера/Ext/Module.bsl",
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl",
+          "Ext/SessionModule.bsl",
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl",
+          "Catalogs/КартыОтступа/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "Catalogs/КартыОтступа/Forms/ФормаЭлемента/Ext/Form/Module.bsl",
+          "CommonModules/ОбменДаннымиВызовСервера/Ext/Module.bsl",
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl",
+          "CommonModules/ОбменДаннымиВызовСервера/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 985.9
+      },
+      {
+        "id": "auto-15",
+        "type": "trap",
+        "query": "документ внесение утвежденных прогнозов менеджера ВыполнитьДвиженияПоРегистрам",
+        "relevant_sources": [
+          "Documents/ВнесениеУтвежденныхПрогнозовМенеджера/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Documents/ПутевойЛист/Ext/ObjectModule.bsl",
+          "BusinessProcesses/ОпределениеВовлеченныхВПроцесс/Ext/ObjectModule.bsl",
+          "Documents/ПереоценкаАктивовМеждународный/Ext/ObjectModule.bsl",
+          "Documents/ПоступлениеНМА/Ext/ObjectModule.bsl",
+          "Documents/НачислениеНДСпоСМРхозспособом/Ext/ObjectModule.bsl",
+          "BusinessProcesses/ОпределениеВовлеченныхВПроцесс/Ext/ObjectModule.bsl",
+          "Reports/ОтчетПоПланируемымПоступлениямДС_20/Ext/ObjectModule.bsl",
+          "Documents/ВозвратТоваровОтПокупателя/Ext/ObjectModule.bsl",
+          "CommonModules/РаботаВМоделиСервисаБИП/Ext/Module.bsl",
+          "Documents/ПереоценкаАктивовМеждународный/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1155.6
+      },
+      {
+        "id": "auto-16",
+        "type": "exact",
+        "query": "УстановитьКонтактунуюИнформацию",
+        "relevant_sources": [
+          "Documents/Заявка/Forms/ФормаДокументаНаВключениНовойПозицииУФ/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/УправлениеКонтактнойИнформациейНовая/Ext/Module.bsl",
+          "Ext/OrdinaryApplicationModule.bsl",
+          "CommonModules/ОбменДанными/Ext/Module.bsl",
+          "InformationRegisters/АдресныеОбъекты/Forms/СведенияОбАдресномКлассификаторе/Ext/Form/Module.bsl",
+          "DataProcessors/ОбменССайтом/Ext/ObjectModule.bsl",
+          "InformationRegisters/СпособыУведомленияПользователей/Ext/ManagerModule.bsl",
+          "InformationRegisters/СпособыУведомленияПользователей/Ext/ManagerModule.bsl",
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl",
+          "Reports/ОтчетПоДаннымКонтрагента/Ext/ObjectModule.bsl",
+          "CommonModules/СтандартныеПодсистемыСервер/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 675.9
+      },
+      {
+        "id": "auto-17",
+        "type": "semantic",
+        "query": "как реализовано документ остатки для",
+        "relevant_sources": [
+          "Documents/ОстаткиДляТОИР/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "AccumulationRegisters/ЭКРазмещениеСуточныхЗаданий/Ext/RecordSetModule.bsl",
+          "Documents/ОтчетКомитентуОПродажах/Ext/ObjectModule.bsl",
+          "Documents/ПолучениеУслугПоПереработке/Ext/ObjectModule.bsl",
+          "CommonModules/УправлениеПроизводством/Ext/Module.bsl",
+          "Documents/ПереоценкаТоваровПринятыхНаКомиссию/Ext/ObjectModule.bsl",
+          "CommonModules/ЭК_ДополнительныеФункцииНеГлобальный/Ext/Module.bsl",
+          "CommonModules/УправлениеДенежнымиСредствами/Ext/Module.bsl",
+          "Documents/ОтчетКомиссионераОПродажах/Ext/ObjectModule.bsl",
+          "DataProcessors/РМПланированиеРазвития/Forms/ФормаРуководителя2_НаПланах/Ext/Form/Module.bsl",
+          "AccumulationRegisters/ЭКЗаявкиВПроизводство/Ext/RecordSetModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1145.9
+      },
+      {
+        "id": "auto-18",
+        "type": "trap",
+        "query": "документ поступление ПолучитьСписокПечатныхФорм",
+        "relevant_sources": [
+          "Documents/ПоступлениеНМА/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "CommonModules/БухгалтерскийУчет/Ext/Module.bsl",
+          "Documents/СчетФактураВыданный/Ext/ManagerModule.bsl",
+          "DataProcessors/ПечатьПакетаДокументов/Forms/Форма/Ext/Form/Module.bsl",
+          "Documents/ТрудовойДоговор/Ext/ObjectModule.bsl",
+          "Documents/СпецификацияПоставщика/Ext/ObjectModule.bsl",
+          "DataProcessors/ПечатьПакетаДокументов/Forms/Форма/Ext/Form/Module.bsl",
+          "Documents/СчетФактураВыданный/Ext/ManagerModule.bsl",
+          "Documents/РеализацияТоваровУслуг/Ext/ObjectModule.bsl",
+          "Documents/ПланДвиженияДенежныхСредств/Ext/ObjectModule.bsl",
+          "DataProcessors/ПечатьПакетаДокументов/Forms/Форма/Ext/Form/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1066.8
+      },
+      {
+        "id": "auto-19",
+        "type": "exact",
+        "query": "ОбновитьТаблицуТовары",
+        "relevant_sources": [
+          "Documents/СборочнаяСпецификация/Forms/ФормаДокументаТСДУФ/Ext/Form/Module.bsl"
+        ],
+        "retrieved_sources": [
+          "Documents/ПоступлениеТоваровУслуг/Ext/ObjectModule.bsl",
+          "CommonModules/ЭК_МетодыРегламентныхЗаданий/Ext/Module.bsl",
+          "Documents/ЗаказПоставщику/Ext/ObjectModule.bsl",
+          "CommonModules/УчетРулонов/Ext/Module.bsl",
+          "CommonModules/ЭК_МетодыРегламентныхЗаданий/Ext/Module.bsl",
+          "Documents/СборочнаяСпецификация/Forms/ФормаИнвентаризацияТСДУФ/Ext/Form/Module.bsl",
+          "Documents/ПеремещениеТоваров/Ext/ObjectModule.bsl",
+          "Documents/СборочнаяСпецификация/Forms/ФормаИнвентаризацияТСДУФ/Ext/Form/Module.bsl",
+          "Documents/ВозвратПереданныхТоваров/Ext/ObjectModule.bsl",
+          "Documents/ЗаказПокупателя/Ext/ObjectModule.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1223.4
+      },
+      {
+        "id": "auto-20",
+        "type": "semantic",
+        "query": "как реализовано документ установка цен номенклатуры",
+        "relevant_sources": [
+          "Documents/УстановкаЦенНоменклатуры/Ext/ObjectModule.bsl"
+        ],
+        "retrieved_sources": [
+          "Catalogs/ТипыЦенНоменклатурыКонтрагентов/Ext/ObjectModule.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "DataProcessors/ОбновлениеИнформационнойБазы/Ext/ObjectModule.bsl",
+          "Documents/ЦРПТ_СозданиеКарточкиТоваров/Ext/ManagerModule.bsl",
+          "CommonModules/Ценообразование/Ext/Module.bsl",
+          "CommonModules/Ценообразование/Ext/Module.bsl",
+          "DataProcessors/ОбновлениеИнформационнойБазы/Ext/ObjectModule.bsl",
+          "CommonModules/ОбработкаТабличныхЧастей/Ext/Module.bsl",
+          "DataProcessors/Б_ПомощникИмпортаТоваровБитриксС/Ext/ObjectModule.bsl",
+          "CommonModules/Ценообразование/Ext/Module.bsl"
+        ],
+        "hit@1": 0.0,
+        "mrr@10": 0.0,
+        "ndcg@10": 0.0,
+        "recall@10": 0.0,
+        "latency_ms": 1058.8
+      }
+    ]
+  },
+  "golden": "D:\\MCP_1С_homework\\data\\eval\\gold_set.jsonl"
+}

@@ -26,8 +26,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from index_progress import collect_progress, write_status_files  # noqa: E402
-from mcp_1c_homework.index_guard import lock_holder_alive  # noqa: E402
-from mcp_1c_homework.keep_awake import allow_sleep, prevent_sleep  # noqa: E402
+from mcp_1c_rag.index_guard import lock_holder_alive  # noqa: E402
+from mcp_1c_rag.keep_awake import allow_sleep, prevent_sleep  # noqa: E402
 from process_alive import process_alive  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]

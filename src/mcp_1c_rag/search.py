@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mcp_1c_homework.config import (
+from mcp_1c_rag.config import (
     HYBRID_CANDIDATE_MULT,
     HYBRID_ENABLED,
 )
-from mcp_1c_homework.embeddings import embed_query
-from mcp_1c_homework.hybrid import hybrid_rerank
-from mcp_1c_homework.index_guard import IndexBusy
-from mcp_1c_homework.store import (
+from mcp_1c_rag.embeddings import embed_query
+from mcp_1c_rag.hybrid import hybrid_rerank
+from mcp_1c_rag.index_guard import IndexBusy
+from mcp_1c_rag.store import (
     get_code_collection,
     get_metadata_collection,
     query_collection,
@@ -20,7 +20,7 @@ from mcp_1c_homework.store import (
 
 def _format_hits(hits: list[dict[str, Any]]) -> str:
     if not hits:
-        return "No results. Build the index first: python -m mcp_1c_homework.indexer --reset"
+        return "No results. Build the index first: python -m mcp_1c_rag.indexer --reset"
     blocks: list[str] = []
     for i, hit in enumerate(hits, start=1):
         meta = hit.get("metadata") or {}
@@ -58,7 +58,7 @@ def codesearch(query: str, limit: int = 5) -> str:
     except IndexBusy as exc:
         return str(exc)
     if collection.count() == 0:
-        return "Code index is empty. Run: python -m mcp_1c_homework.indexer --target code --reset"
+        return "Code index is empty. Run: python -m mcp_1c_rag.indexer --target code --reset"
     return _format_hits(_search_collection(collection, query, limit))
 
 
@@ -71,6 +71,6 @@ def metadatasearch(query: str, limit: int = 20) -> str:
     if collection.count() == 0:
         return (
             "Metadata index is empty. Run: "
-            "python -m mcp_1c_homework.indexer --target metadata --reset"
+            "python -m mcp_1c_rag.indexer --target metadata --reset"
         )
     return _format_hits(_search_collection(collection, query, limit))

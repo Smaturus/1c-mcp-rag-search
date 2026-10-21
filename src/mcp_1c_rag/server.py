@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from mcp.server.mcpserver import MCPServer
 
-from mcp_1c_homework import eval_retrieval as eval_mod
-from mcp_1c_homework import search as legacy_search
-from mcp_1c_homework import search_modes
-from mcp_1c_homework.index_guard import IndexBusy
+from mcp_1c_rag import eval_retrieval as eval_mod
+from mcp_1c_rag import search as legacy_search
+from mcp_1c_rag import search_modes
+from mcp_1c_rag.index_guard import IndexBusy
 
 mcp = MCPServer(
     "1c-mcp-rag-search",

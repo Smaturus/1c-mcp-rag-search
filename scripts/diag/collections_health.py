@@ -4,7 +4,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 import chromadb
 
-from mcp_1c_homework.store import get_code_collection, get_metadata_collection
+from mcp_1c_rag.store import get_code_collection, get_metadata_collection
 
 print("chromadb version:", chromadb.__version__)
 

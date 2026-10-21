@@ -6,7 +6,7 @@
     ``hybrid``        — cosine + глобальный BM25 через RRF;
     ``hybrid_rerank`` — RRF + cross-encoder (flashrank).
 
-Метрики считаются по файлам-источникам (``src/mcp_1c_homework/eval_metrics.py``):
+Метрики считаются по файлам-источникам (``src/mcp_1c_rag/eval_metrics.py``):
 Hit@1, MRR@10, nDCG@10, Recall@10 + средняя латентность.
 
 Пример:
@@ -30,15 +30,15 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.config import CHROMA_DIR, DATA_DIR  # noqa: E402
-from mcp_1c_homework.eval_metrics import (  # noqa: E402
+from mcp_1c_rag.config import CHROMA_DIR, DATA_DIR  # noqa: E402
+from mcp_1c_rag.eval_metrics import (  # noqa: E402
     AggregateMetrics,
     QueryMetrics,
     aggregate,
     evaluate_query,
     format_markdown_table,
 )
-from mcp_1c_homework.search_modes import search  # noqa: E402
+from mcp_1c_rag.search_modes import search  # noqa: E402
 
 CONFIGS: list[tuple[str, str]] = [
     ("vector", "только cosine (baseline)"),

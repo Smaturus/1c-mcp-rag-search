@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.rrf import rrf_fuse, rrf_order, rrf_ranks  # noqa: E402
+from mcp_1c_rag.rrf import rrf_fuse, rrf_order, rrf_ranks  # noqa: E402
 
 
 def test_rrf_ranks_are_one_based() -> None:

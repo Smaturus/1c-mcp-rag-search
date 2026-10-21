@@ -2,8 +2,8 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-from mcp_1c_homework.embeddings import embed_query
-from mcp_1c_homework.store import get_code_collection, query_collection
+from mcp_1c_rag.embeddings import embed_query
+from mcp_1c_rag.store import get_code_collection, query_collection
 
 col = get_code_collection()
 print("count:", col.count())

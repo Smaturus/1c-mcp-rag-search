@@ -32,8 +32,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.embeddings import embed_passages, embed_query  # noqa: E402
-from mcp_1c_homework.store import (  # noqa: E402
+from mcp_1c_rag.embeddings import embed_passages, embed_query  # noqa: E402
+from mcp_1c_rag.store import (  # noqa: E402
     get_code_collection,
     get_metadata_collection,
     query_collection,

@@ -35,8 +35,8 @@ dependencies = [
 dev = ["pytest>=8.0", "ruff>=0.6.0", "mypy>=1.11.0"]
 
 [project.scripts]
-1c-rag-search = "mcp_1c_homework.server:main"
-1c-rag-build-index = "mcp_1c_homework.indexer:main"
+1c-rag-search = "mcp_1c_rag.server:main"
+1c-rag-build-index = "mcp_1c_rag.indexer:main"
 
 [project.urls]
 Homepage = "https://github.com/Smaturus/1c-mcp-rag-search"
@@ -83,7 +83,7 @@ quote-style = "double"
 
 [tool.mypy]
 python_version = "3.11"
-files = ["src/mcp_1c_homework"]
+files = ["src/mcp_1c_rag"]
 warn_unused_ignores = true
 warn_redundant_casts = true
 check_untyped_defs = true

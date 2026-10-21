@@ -11,14 +11,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from mcp_1c_homework.bm25 import BM25Okapi, tokenize
-from mcp_1c_homework.config import (
+from mcp_1c_rag.bm25 import BM25Okapi, tokenize
+from mcp_1c_rag.config import (
     HYBRID_ALPHA,
     HYBRID_BM25_WEIGHT,
     HYBRID_PEARSON_WEIGHT,
 )
-from mcp_1c_homework.embeddings import embed_passages, embed_query
-from mcp_1c_homework.metrics import pearson_correlation
+from mcp_1c_rag.embeddings import embed_passages, embed_query
+from mcp_1c_rag.metrics import pearson_correlation
 
 
 def _minmax_norm(values: list[float]) -> list[float]:

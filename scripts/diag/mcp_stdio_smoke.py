@@ -12,7 +12,7 @@ ERRLOG = r"C:\Users\smatu\AppData\Local\Temp\mcp_stdio_stderr.log"
 
 err = open(ERRLOG, "w", encoding="utf-8")
 proc = subprocess.Popen(
-    [PY, "-m", "mcp_1c_homework"],
+    [PY, "-m", "mcp_1c_rag"],
     cwd=CWD,
     stdin=subprocess.PIPE,
     stdout=subprocess.PIPE,

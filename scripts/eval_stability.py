@@ -25,7 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.config import DATA_DIR  # noqa: E402
+from mcp_1c_rag.config import DATA_DIR  # noqa: E402
 
 METRICS = ("hit@1", "mrr@10", "ndcg@10", "recall@10", "latency_ms")
 MODES_ORDER = ("vector", "pearson", "hybrid", "hybrid_rerank")

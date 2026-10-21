@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.config import CHROMA_DIR, DATA_DIR  # noqa: E402
+from mcp_1c_rag.config import CHROMA_DIR, DATA_DIR  # noqa: E402
 
 _PROC = re.compile(r"(?i)\b(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_]*)")
 

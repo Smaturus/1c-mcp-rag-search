@@ -8,12 +8,12 @@ from typing import Any, cast
 import chromadb
 from chromadb.api.models.Collection import Collection
 
-from mcp_1c_homework.config import (
+from mcp_1c_rag.config import (
     CHROMA_DIR,
     COLLECTION_CODE,
     COLLECTION_METADATA,
 )
-from mcp_1c_homework.index_guard import refuse_if_foreign_writer
+from mcp_1c_rag.index_guard import refuse_if_foreign_writer
 
 
 def get_client() -> Any:

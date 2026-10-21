@@ -20,8 +20,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.bm25 import Bm25Index, docs_from_sqlite  # noqa: E402
-from mcp_1c_homework.config import BM25_B, BM25_DIR, BM25_K1, CHROMA_DIR  # noqa: E402
+from mcp_1c_rag.bm25 import Bm25Index, docs_from_sqlite  # noqa: E402
+from mcp_1c_rag.config import BM25_B, BM25_DIR, BM25_K1, CHROMA_DIR  # noqa: E402
 
 
 def main() -> int:

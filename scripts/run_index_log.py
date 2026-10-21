@@ -26,7 +26,7 @@ def main() -> int:
                 sys.executable,
                 "-u",
                 "-m",
-                "mcp_1c_homework.indexer",
+                "mcp_1c_rag.indexer",
                 "--target",
                 "all",
                 "--reset",

@@ -21,8 +21,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.config import BM25_DIR, CHROMA_DIR, DATA_DIR  # noqa: E402
-from mcp_1c_homework.search_modes import search  # noqa: E402
+from mcp_1c_rag.config import BM25_DIR, CHROMA_DIR, DATA_DIR  # noqa: E402
+from mcp_1c_rag.search_modes import search  # noqa: E402
 
 MODES = ("vector", "pearson", "hybrid", "hybrid_rerank")
 

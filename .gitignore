@@ -33,7 +33,7 @@ data/test_tick_loop_report.json
 data/index_chat_last_report.json
 
 # Intermediate eval runs (the aggregated report_pipeline.md is tracked)
-data/eval/run_*.json
+data/eval/**/run_*.json
 
 # HuggingFace / torch caches if placed in project
 .cache/

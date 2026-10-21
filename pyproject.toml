@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcp-1c-homework"
+name = "1c-mcp-rag-search"
 version = "0.2.1"
 description = "MCP server with hybrid RAG retrieval (cosine + BM25 + RRF) over 1C BSL code and configuration metadata, no Docker"
 readme = "README.md"
@@ -35,13 +35,13 @@ dependencies = [
 dev = ["pytest>=8.0", "ruff>=0.6.0", "mypy>=1.11.0"]
 
 [project.scripts]
-mcp-1c-homework = "mcp_1c_homework.server:main"
-mcp-1c-build-index = "mcp_1c_homework.indexer:main"
+1c-rag-search = "mcp_1c_homework.server:main"
+1c-rag-build-index = "mcp_1c_homework.indexer:main"
 
 [project.urls]
-Homepage = "https://github.com/Smaturus/mcp-1c-homework"
-Repository = "https://github.com/Smaturus/mcp-1c-homework"
-Issues = "https://github.com/Smaturus/mcp-1c-homework/issues"
+Homepage = "https://github.com/Smaturus/1c-mcp-rag-search"
+Repository = "https://github.com/Smaturus/1c-mcp-rag-search"
+Issues = "https://github.com/Smaturus/1c-mcp-rag-search/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

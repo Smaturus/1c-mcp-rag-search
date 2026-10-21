@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/Smaturus/mcp-1c-homework/security/advisories/new
+    url: https://github.com/Smaturus/1c-mcp-rag-search/security/advisories/new
     about: Please report vulnerabilities privately (Security → Report a vulnerability), not in public issues.
   - name: Documentation and setup
-    url: https://github.com/Smaturus/mcp-1c-homework#readme
+    url: https://github.com/Smaturus/1c-mcp-rag-search#readme
     about: Installation, indexing, retrieval pipeline, evaluation and architecture docs.

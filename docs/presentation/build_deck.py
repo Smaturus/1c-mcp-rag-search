@@ -219,7 +219,7 @@ def build() -> Path:
     text(slide, MARGIN, Inches(5.05), Inches(8), Inches(0.4),
          "Sergey Matyukhin", size=20, bold=True, color=WHITE)
     text(slide, MARGIN, Inches(5.5), Inches(9), Inches(1.2),
-         "github.com/Smaturus/mcp-1c-homework\nMCP Python SDK  ·  Chroma  ·  multilingual-e5-small  ·  BM25  ·  RRF  ·  flashrank",
+         "github.com/Smaturus/1c-mcp-rag-search\nMCP Python SDK  ·  Chroma  ·  multilingual-e5-small  ·  BM25  ·  RRF  ·  flashrank",
          size=13, color=RGBColor(0xB9, 0xD7, 0xE6), line_spacing=1.2)
     notes(slide, "Учебный и портфолио-проект: свой MCP-сервер и RAG-контур для поиска по выгрузке 1С. "
                  "Главная идея: не просто «поиск работает», а измеренное качество и документированные решения.")
@@ -568,7 +568,7 @@ def build() -> Path:
     ]:
         add_para(box2, item, size=15)
     text(slide, MARGIN, Inches(6.35), W - 2 * MARGIN, Inches(0.6),
-         "github.com/Smaturus/mcp-1c-homework  ·  smaturus@gmail.com",
+         "github.com/Smaturus/1c-mcp-rag-search  ·  smaturus@gmail.com",
          size=14, bold=True, color=ACCENT)
     notes(slide, "Финальный слайд: что сделано, что дальше, где посмотреть код. "
                  "Главный вывод — измеримость: каждое решение подтверждено цифрами и записано в ADR.")

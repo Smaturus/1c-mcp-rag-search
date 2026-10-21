@@ -11,7 +11,7 @@
 
 - Предпочтительно — приватно через GitHub:
   вкладка **Security → Report a vulnerability** в этом репозитории;
-- Либо письмом на **smaturus@gmail.com** с темой `[security] mcp-1c-homework`.
+- Либо письмом на **smaturus@gmail.com** с темой `[security] 1c-mcp-rag-search`.
 
 Пожалуйста, приложите версию/коммит, шаги воспроизведения и оценку влияния.
 

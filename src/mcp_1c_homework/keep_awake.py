@@ -2,12 +2,14 @@
 
 While the machine is already asleep, no process can post to chat. Keep the
 system awake for the duration of the writer, and clear the request on exit.
+On non-Windows platforms both functions are no-ops.
 """
 
 from __future__ import annotations
 
 import atexit
 import sys
+from typing import Any, cast
 
 _ES_CONTINUOUS = 0x80000000
 _ES_SYSTEM_REQUIRED = 0x00000001
@@ -16,12 +18,12 @@ _armed = False
 
 
 def _set_thread_execution_state(flags: int) -> None:
-    """Call the Windows API; kept separate so mypy is happy on non-Windows CI."""
+    """Call the Windows API; isolated so mypy passes on non-Windows CI."""
     import ctypes
 
-    # ``ctypes.windll`` exists only on Windows; getattr avoids a hard attribute
-    # reference that fails type checking on Linux/macOS.
-    getattr(ctypes, "windll").kernel32.SetThreadExecutionState(flags)
+    # ``ctypes.windll`` exists only on Windows; casting to Any avoids a hard
+    # attribute reference that fails type checking on Linux/macOS runners.
+    cast("Any", ctypes).windll.kernel32.SetThreadExecutionState(flags)
 
 
 def prevent_sleep() -> None:

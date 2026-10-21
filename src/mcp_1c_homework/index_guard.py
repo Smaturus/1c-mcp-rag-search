@@ -37,10 +37,11 @@ def pid_alive(pid: int) -> bool:
         return False
     if os.name == "nt":
         import ctypes
+        from typing import Any, cast
 
-        # ``ctypes.windll`` exists only on Windows. ``getattr`` keeps this module
-        # importable and type-checkable on Linux/macOS (CI runs on ubuntu-latest).
-        kernel32 = getattr(ctypes, "windll").kernel32
+        # ``ctypes.windll`` exists only on Windows; casting the module to Any
+        # keeps this file importable and type-checkable on Linux/macOS runners.
+        kernel32 = cast("Any", ctypes).windll.kernel32
         handle = kernel32.OpenProcess(0x1000, False, pid)
         if not handle:
             return False

@@ -307,6 +307,7 @@ python scripts\eval_stability.py
 | [docs/adr/0003-file-level-evaluation.md](docs/adr/0003-file-level-evaluation.md) | почему метрики считаются по файлам |
 | [data/eval/report_pipeline.md](data/eval/report_pipeline.md) | сравнение 4 конфигураций на 30 запросах |
 | [data/eval/bench.md](data/eval/bench.md) | латентность p50/p95, размеры индексов |
+| [docs/presentation/MCP_1C_Homework.pptx](docs/presentation/MCP_1C_Homework.pptx) | презентация проекта для защиты (12 слайдов) |
 | [CHANGELOG.md](CHANGELOG.md) | история изменений |
 
 ## Разработка и качество

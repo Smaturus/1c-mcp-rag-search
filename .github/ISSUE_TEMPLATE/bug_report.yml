@@ -22,7 +22,6 @@ body:
       placeholder: |
         1. python -m mcp_1c_homework.indexer --reset
         2. search("...", mode="hybrid")
-      ...
     validations:
       required: true
   - type: input

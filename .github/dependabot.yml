@@ -1,0 +1,58 @@
+version: 2
+
+updates:
+  # Python-зависимости проекта (pyproject.toml).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Europe/Moscow"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+    groups:
+      # ML-стек обновляем одной группой: torch/chromadb/sentence-transformers
+      # связаны между собой версиями, отдельные PR создают конфликты.
+      ml-stack:
+        patterns:
+          - "chromadb"
+          - "sentence-transformers"
+          - "torch"
+          - "transformers"
+          - "flashrank"
+          - "numpy"
+      dev-tools:
+        patterns:
+          - "pytest"
+          - "ruff"
+          - "mypy"
+      other:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "chromadb"
+          - "sentence-transformers"
+          - "torch"
+          - "transformers"
+          - "flashrank"
+          - "numpy"
+          - "pytest"
+          - "ruff"
+          - "mypy"
+
+  # Версии GitHub Actions в .github/workflows.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"

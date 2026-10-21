@@ -34,5 +34,5 @@ python scripts\diag\hnsw_selfmatch.py
 - Часть скриптов писалась под конкретный инцидент и ожидает его состояние данных.
 - Они не покрыты тестами и не входят в CI.
 
-Рабочий пайплайн — модули `src/mcp_1c_homework/` и скрипты `scripts/*.py`
+Рабочий пайплайн — модули `src/mcp_1c_rag/` и скрипты `scripts/*.py`
 (`build_bm25.py`, `make_goldset.py`, `eval_pipeline.py`, `eval_stability.py`, `bench.py`).

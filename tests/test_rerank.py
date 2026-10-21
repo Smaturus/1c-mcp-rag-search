@@ -8,8 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.rerank import rerank  # noqa: E402
-from mcp_1c_homework.search_modes import Candidate  # noqa: E402
+from mcp_1c_rag.rerank import rerank  # noqa: E402
+from mcp_1c_rag.search_modes import Candidate  # noqa: E402
 
 
 class FakeRanker:

@@ -109,7 +109,7 @@ def _writer_alive() -> bool:
     Read-only: does not open the vector base and does not delete the lock.
     """
     try:
-        from mcp_1c_homework.index_guard import lock_holder_alive
+        from mcp_1c_rag.index_guard import lock_holder_alive
 
         return lock_holder_alive()
     except Exception:

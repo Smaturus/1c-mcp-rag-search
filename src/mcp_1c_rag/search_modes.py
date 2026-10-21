@@ -20,18 +20,18 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from mcp_1c_homework.config import (
+from mcp_1c_rag.config import (
     BM25_DIR,
     HYBRID_TOP_K,
     RERANK_CANDIDATES,
     RRF_K,
     SEARCH_DEFAULT_MODE,
 )
-from mcp_1c_homework.models import Candidate
-from mcp_1c_homework.rrf import rrf_fuse, rrf_order
+from mcp_1c_rag.models import Candidate
+from mcp_1c_rag.rrf import rrf_fuse, rrf_order
 
 if TYPE_CHECKING:  # pragma: no cover - только для аннотаций
-    from mcp_1c_homework.bm25 import Bm25Index
+    from mcp_1c_rag.bm25 import Bm25Index
 
 SearchMode = Literal["vector", "hybrid", "hybrid_rerank", "pearson"]
 
@@ -45,7 +45,7 @@ _masks: dict[str, np.ndarray] = {}
 
 def get_collection(name: str = "code"):
     """Вернуть Chroma-коллекцию по имени (``code`` или ``metadata``)."""
-    from mcp_1c_homework.store import get_code_collection, get_metadata_collection
+    from mcp_1c_rag.store import get_code_collection, get_metadata_collection
 
     key = (name or "code").strip().lower()
     if key in ("metadata", "meta"):
@@ -57,7 +57,7 @@ def get_bm25() -> Bm25Index:
     """Ленивая загрузка глобального BM25-индекса (собирается build_bm25.py)."""
     global _bm25
     if _bm25 is None:
-        from mcp_1c_homework.bm25 import Bm25Index
+        from mcp_1c_rag.bm25 import Bm25Index
 
         if not (BM25_DIR / "index.npz").exists():
             raise FileNotFoundError(
@@ -117,7 +117,7 @@ def _raw_query(
     include_embeddings: bool = False,
 ) -> dict[str, list]:
     """Chroma-запрос с сохранением id (нужны для RRF) и, опционально, векторов."""
-    from mcp_1c_homework.embeddings import embed_query
+    from mcp_1c_rag.embeddings import embed_query
 
     coll = get_collection(collection_name)
     count = coll.count()
@@ -224,7 +224,7 @@ def pearson_search(
     Эмбеддинги пассажей берутся прямо из Chroma, а не пересчитываются моделью:
     это честнее по латентности и не меняет формулу Пирсона.
     """
-    from mcp_1c_homework.hybrid import hybrid_rerank
+    from mcp_1c_rag.hybrid import hybrid_rerank
 
     raw = _raw_query(collection, query, max(top_k * 4, top_k), include_embeddings=True)
     hits = [
@@ -283,7 +283,7 @@ def search(
     if chosen == "hybrid":
         return hybrid_search(query, collection=collection, top_k=top_k)[:top_k]
 
-    from mcp_1c_homework.rerank import rerank
+    from mcp_1c_rag.rerank import rerank
 
     candidates = hybrid_search(
         query,

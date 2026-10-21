@@ -63,7 +63,7 @@ py -3.12 -m venv .venv
 pip install -e ".[dev]"
 
 # 1) индекс по локальной выгрузке 1С (пути — ниже)
-python -m mcp_1c_homework.indexer --reset
+python -m mcp_1c_rag.indexer --reset
 
 # 2) лексический индекс для RRF
 python scripts\build_bm25.py
@@ -91,7 +91,7 @@ python scripts\bench.py
 ## Retrieval pipeline
 
 Единая точка входа — `search(query, top_k, mode)` в
-[src/mcp_1c_homework/search_modes.py](src/mcp_1c_homework/search_modes.py).
+[src/mcp_1c_rag/search_modes.py](src/mcp_1c_rag/search_modes.py).
 
 | Режим | Что делает | Латентность |
 |---|---|---|
@@ -109,14 +109,14 @@ python scripts\bench.py
   документы — индексатором;
 - reranker **не заменяет** e5-small, а переупорядочивает 20 кандидатов RRF;
 - параметры (модель, `top_k`, `k_rrf`, `max_length`) — переменные окружения в
-  [config.py](src/mcp_1c_homework/config.py), без правки кода.
+  [config.py](src/mcp_1c_rag/config.py), без правки кода.
 
 ```powershell
 # собрать лексический индекс (один раз)
 python scripts\build_bm25.py
 
 # вызвать из кода
-python -c "from mcp_1c_homework.search_modes import search; print(search('НДС с аванса', top_k=3, mode='hybrid'))"
+python -c "from mcp_1c_rag.search_modes import search; print(search('НДС с аванса', top_k=3, mode='hybrid'))"
 ```
 
 ## Оценка качества
@@ -195,15 +195,15 @@ pip install -e ".[dev]"
 $env:MCP_1C_STUDY_ROOT="D:\Study"                 # дерево .bsl
 $env:MCP_1C_STUDY_REPORT_ROOT="D:\Study_Report"  # отчёт конфигурации
 
-python -m mcp_1c_homework.indexer --reset
+python -m mcp_1c_rag.indexer --reset
 python scripts\build_bm25.py
 ```
 
 Smoke-режим (ограничить объём):
 
 ```powershell
-python -m mcp_1c_homework.indexer --target code --reset --limit 30 --max-chunks 200
-python -m mcp_1c_homework.indexer --target metadata --reset --max-chunks 200
+python -m mcp_1c_rag.indexer --target code --reset --limit 30 --max-chunks 200
+python -m mcp_1c_rag.indexer --target metadata --reset --max-chunks 200
 ```
 
 Индекс: `data/chroma/` (в `.gitignore`). Другие переменные: `MCP_1C_CHROMA_DIR`,
@@ -216,7 +216,7 @@ python -m mcp_1c_homework.indexer --target metadata --reset --max-chunks 200
 ```json
 "1c-mcp-rag-search": {
   "command": "D:\\path\\to\\repo\\.venv\\Scripts\\python.exe",
-  "args": ["-m", "mcp_1c_homework"]
+  "args": ["-m", "mcp_1c_rag"]
 }
 ```
 
@@ -226,7 +226,7 @@ python -m mcp_1c_homework.indexer --target metadata --reset --max-chunks 200
 Проверка без клиента:
 
 ```powershell
-python -c "from mcp_1c_homework.search import codesearch, metadatasearch; print(codesearch('Провести', 3)); print(metadatasearch('Справочник', 3))"
+python -c "from mcp_1c_rag.search import codesearch, metadatasearch; print(codesearch('Провести', 3)); print(metadatasearch('Справочник', 3))"
 ```
 
 ## Архитектурные решения
@@ -260,7 +260,7 @@ flashrank) импортируются лениво, поэтому CI быстр
 
 ```
 pyproject.toml, README.md, CHANGELOG.md, LICENSE
-src/mcp_1c_homework/
+src/mcp_1c_rag/
   server.py         MCP-сервер и tools
   search_modes.py   vector / hybrid (RRF) / hybrid_rerank / pearson
   bm25.py           токенизация + BM25Okapi + глобальный Bm25Index

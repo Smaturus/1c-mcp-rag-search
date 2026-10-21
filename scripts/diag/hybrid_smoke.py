@@ -4,7 +4,7 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 os.environ["MCP_1C_HYBRID"] = "1"
 
-from mcp_1c_homework.search import codesearch
+from mcp_1c_rag.search import codesearch
 
 print("=== HYBRID codesearch('начисление НДС с аванса', 5) ===")
 r = codesearch("начисление НДС с аванса", 5)

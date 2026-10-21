@@ -10,10 +10,10 @@ from __future__ import annotations
 import math
 import random
 
-from mcp_1c_homework.embeddings import embed_passages, embed_query
-from mcp_1c_homework.index_guard import IndexBusy
-from mcp_1c_homework.metrics import pearson_correlation
-from mcp_1c_homework.store import (
+from mcp_1c_rag.embeddings import embed_passages, embed_query
+from mcp_1c_rag.index_guard import IndexBusy
+from mcp_1c_rag.metrics import pearson_correlation
+from mcp_1c_rag.store import (
     get_code_collection,
     get_metadata_collection,
     query_collection,
@@ -119,7 +119,7 @@ def evaluate_retrieval(
     if coll.count() == 0:
         return (
             f"Collection «{coll_name}» is empty. "
-            "Finish indexing: python -m mcp_1c_homework.indexer --reset"
+            "Finish indexing: python -m mcp_1c_rag.indexer --reset"
         )
 
     needles = _parse_needles(q, relevant_sources)

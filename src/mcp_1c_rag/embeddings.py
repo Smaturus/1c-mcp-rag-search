@@ -7,7 +7,7 @@ from functools import lru_cache
 
 from sentence_transformers import SentenceTransformer
 
-from mcp_1c_homework.config import EMBEDDING_MODEL
+from mcp_1c_rag.config import EMBEDDING_MODEL
 
 
 @lru_cache(maxsize=1)

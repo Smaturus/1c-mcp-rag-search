@@ -21,9 +21,10 @@
 
 ### Changed
 
-- Проект переименован: `mcp-1c-homework` → **`1c-mcp-rag-search`** (репозиторий,
-  pyproject, имя MCP-сервера, ссылки). Import-пакет `mcp_1c_homework` сохранён
-  для обратной совместимости.
+- Проект переименован: `mcp-1c-homework` → **`1c-mcp-rag-search`**. Изменены
+  репозиторий, distribution и import-пакет (`mcp_1c_homework` → **`mcp_1c_rag`**),
+  console-скрипты (`1c-rag-search`, `1c-rag-build-index`), имя MCP-сервера,
+  все импорты, документация и ссылки.
 - README переписан в продуктовом тоне: результаты, архитектура, решения,
   ограничения и roadmap вместо «учебных» формулировок.
 

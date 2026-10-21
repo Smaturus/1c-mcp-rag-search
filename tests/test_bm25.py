@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.bm25 import Bm25Index, BM25Okapi, docs_from_sqlite, tokenize  # noqa: E402
+from mcp_1c_rag.bm25 import Bm25Index, BM25Okapi, docs_from_sqlite, tokenize  # noqa: E402
 
 
 def test_tokenize_keeps_abbreviations_and_codes() -> None:

@@ -18,7 +18,7 @@ from index_chat_owner import (  # noqa: E402
     is_real_conversation_id,
 )
 from index_progress import run_is_finished  # noqa: E402
-from mcp_1c_homework.index_guard import (  # noqa: E402
+from mcp_1c_rag.index_guard import (  # noqa: E402
     IndexBusy,
     IndexProgress,
     acquire_lock,

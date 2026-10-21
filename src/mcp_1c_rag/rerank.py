@@ -13,8 +13,8 @@ from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import Any, Protocol
 
-from mcp_1c_homework.config import RERANK_MAX_LENGTH, RERANK_MODEL
-from mcp_1c_homework.models import Candidate
+from mcp_1c_rag.config import RERANK_MAX_LENGTH, RERANK_MODEL
+from mcp_1c_rag.models import Candidate
 
 
 class _RankerLike(Protocol):

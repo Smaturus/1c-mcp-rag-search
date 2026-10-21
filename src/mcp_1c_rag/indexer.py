@@ -8,8 +8,8 @@ import sys
 import time
 from pathlib import Path
 
-from mcp_1c_homework.chunking import TextChunk, chunk_file
-from mcp_1c_homework.config import (
+from mcp_1c_rag.chunking import TextChunk, chunk_file
+from mcp_1c_rag.config import (
     BSL_CHUNK_CHARS,
     BSL_CHUNK_OVERLAP,
     CHROMA_ADD_BATCH,
@@ -21,8 +21,8 @@ from mcp_1c_homework.config import (
     STUDY_REPORT_ROOT,
     STUDY_ROOT,
 )
-from mcp_1c_homework.embeddings import embed_passages
-from mcp_1c_homework.index_guard import (
+from mcp_1c_rag.embeddings import embed_passages
+from mcp_1c_rag.index_guard import (
     IndexBusy,
     IndexProgress,
     acquire_lock,
@@ -33,8 +33,8 @@ from mcp_1c_homework.index_guard import (
     release_lock,
     save_progress,
 )
-from mcp_1c_homework.keep_awake import allow_sleep, prevent_sleep
-from mcp_1c_homework.store import get_code_collection, get_metadata_collection
+from mcp_1c_rag.keep_awake import allow_sleep, prevent_sleep
+from mcp_1c_rag.store import get_code_collection, get_metadata_collection
 
 
 def _chunk_id(prefix: str, chunk: TextChunk) -> str:
@@ -414,7 +414,7 @@ def build_index(
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry: python -m mcp_1c_homework.indexer ..."""
+    """CLI entry: python -m mcp_1c_rag.indexer ..."""
     parser = argparse.ArgumentParser(
         description="Build Chroma index for 1C BSL and metadata (own MCP homework)."
     )

@@ -10,7 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from mcp_1c_homework.eval_metrics import (  # noqa: E402
+from mcp_1c_rag.eval_metrics import (  # noqa: E402
     aggregate,
     evaluate_query,
     format_markdown_table,

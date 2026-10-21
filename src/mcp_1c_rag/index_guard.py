@@ -16,7 +16,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from mcp_1c_homework.config import DATA_DIR
+from mcp_1c_rag.config import DATA_DIR
 
 # Chat progress is every 10 minutes. The writer must emit a line at least that often.
 PROGRESS_INTERVAL_SEC = 600

@@ -1,0 +1,14 @@
+# Normalize line endings: source stayed LF, Windows launchers CRLF.
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.ps1 text eol=crlf
+
+# Binary artifacts that should never be diffed.
+*.npz binary
+*.pickle binary
+*.sqlite3 binary

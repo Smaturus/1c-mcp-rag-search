@@ -1,0 +1,68 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local vector index and caches
+data/chroma/
+data/bm25/
+data/*.log
+data/local_*.py
+data/_piptest*/
+*.sqlite3
+.tmp/
+_piptest*/
+
+# Local index-build bookkeeping and incident backups (not part of the project)
+data/INDEX_PROGRESS.md
+data/_launch_rebuild.py
+data/index_*
+data/reindex_*
+data/chroma_backup_segments/
+data/chroma_backup_broken_*/
+data/chroma_rebuilt_snapshot_*/
+data/test_tick_loop_report.json
+data/index_chat_last_report.json
+
+# Intermediate eval runs (the aggregated report_pipeline.md is tracked)
+data/eval/run_*.json
+
+# HuggingFace / torch caches if placed in project
+.cache/
+models/
+
+# Personal job-search data (resume profile, fetched vacancies, letters)
+vacancies/
+resume_profile.md
+cover_letters/
+
+# Personal / working notes (not part of the delivered project)
+progress.md
+Промпт_*.md
+.mypy_cache*/
+.ruff_cache/
+.cursor/
+
+# Personal job-search helper (separate track, not part of the retrieval project)
+scripts/hh_fetch.py
+
+# Local DSH bundle sources for the MCP connection
+.dsh-bundles/
+
+# Secrets / env
+.env
+.env.*
+*.pem
+LICENSE_KEY*
+
+# OS / IDE
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/

@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-1c-homework"
+version = "0.2.0"
+description = "MCP server with hybrid RAG retrieval (cosine + BM25 + RRF) over 1C BSL code and configuration metadata, no Docker"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Sergey Matyukhin", email = "smaturus@gmail.com" }]
+keywords = [
+  "mcp", "rag", "retrieval", "bm25", "rrf", "reranker",
+  "1c", "chroma", "e5", "semantic-search",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Text Processing :: Indexing",
+]
+dependencies = [
+  "mcp[cli]>=2.0.0",
+  "chromadb>=0.5.0",
+  "sentence-transformers>=3.0.0",
+  "flashrank>=0.2.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6.0", "mypy>=1.11.0"]
+
+[project.scripts]
+mcp-1c-homework = "mcp_1c_homework.server:main"
+mcp-1c-build-index = "mcp_1c_homework.indexer:main"
+
+[project.urls]
+Homepage = "https://github.com/Smaturus/mcp-1c-homework"
+Repository = "https://github.com/Smaturus/mcp-1c-homework"
+Issues = "https://github.com/Smaturus/mcp-1c-homework/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# --- Quality gates -------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+# Diagnostics and legacy tick-loop scripts are kept as project history/artifacts;
+# they are not part of the delivered retrieval pipeline, so they are not linted.
+extend-exclude = [
+  "scripts/diag",
+  "scripts/index_tick_loop.py",
+  "scripts/index_tick_ctl.py",
+  "scripts/index_chat_arm_once.py",
+  "scripts/index_chat_owner.py",
+  "scripts/test_tick_loop_solution2.py",
+  "data",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "C4", "SIM", "RET", "PTH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+"scripts/*" = ["T201"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/mcp_1c_homework"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true

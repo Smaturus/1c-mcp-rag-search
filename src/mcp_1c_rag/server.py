@@ -12,7 +12,8 @@ from mcp_1c_rag.index_guard import IndexBusy
 mcp = MCPServer(
     "1c-mcp-rag-search",
     instructions=(
-        "Own homework MCP for 1C: semantic + lexical search over BSL and metadata. "
+        "1C retrieval MCP: semantic + lexical search over BSL code and "
+        "configuration metadata. "
         "Tools: codesearch, metadatasearch (cosine baseline), "
         "search(query, top_k, mode, collection) with modes vector | hybrid (RRF) "
         "| hybrid_rerank | pearson, and evaluate_retrieval for quality metrics "
@@ -51,7 +52,7 @@ def evaluate_retrieval(
     relevant_sources: str = "",
     null_pairs: int = 40,
 ) -> str:
-    """Evaluate retrieval quality for one query (homework highlight).
+    """Evaluate retrieval quality for one query (quality metrics).
 
     Example: evaluate_retrieval(query=\"НДС\")
     Returns Hit@k, Recall@k, MRR, top cosine, optional null-tail vs random pairs.
@@ -83,7 +84,7 @@ def search(
 
     Pipeline: e5 cosine top-N + global BM25 top-N -> RRF -> optional cross-encoder
     rerank (flashrank, ms-marco-MultiBERT-L-12). Default mode is ``hybrid``:
-    it wins on nDCG@10/MRR@10 in eval and is ~35x faster than rerank.
+    it wins on nDCG@10/MRR@10 in eval and is ~26x faster than rerank.
 
     Args:
         query: Natural-language or exact-name query (e.g. "НДС с аванса").

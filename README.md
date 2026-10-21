@@ -1,6 +1,7 @@
 # 1C MCP RAG Search
 
 [![CI](https://github.com/Smaturus/1c-mcp-rag-search/actions/workflows/ci.yml/badge.svg)](https://github.com/Smaturus/1c-mcp-rag-search/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Smaturus/1c-mcp-rag-search)](https://github.com/Smaturus/1c-mcp-rag-search/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![MCP](https://img.shields.io/badge/protocol-MCP%20stdio-purple)

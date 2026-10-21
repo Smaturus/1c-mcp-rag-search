@@ -288,11 +288,29 @@ pip install -e ".[dev]"
 pytest -q        # 39 unit-тестов (ML-стек не требуется: импорты ленивые)
 ruff check .     # линтер
 mypy             # проверка типов (20 модулей)
+python scripts\check_complexity.py   # гейт сложности (radon)
+pytest -q --cov=src/mcp_1c_rag       # покрытие
 ```
 
-CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + `pytest`
-на Python 3.11 и 3.12. Тяжёлые зависимости (Chroma, sentence-transformers,
-flashrank) импортируются лениво, поэтому CI быстрый и не тянет ML-стек.
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + **гейт
+цикломатической сложности** + `pytest` с покрытием на Python 3.11 и 3.12.
+Тяжёлые зависимости (Chroma, sentence-transformers, flashrank) импортируются
+лениво, поэтому CI быстрый и не тянет ML-стек.
+
+### Quality gates и текущие значения
+
+| Гейт | Порог | Сейчас |
+|---|---|---|
+| `ruff` | без замечаний | **0 замечаний** |
+| `mypy` | без ошибок | **0 ошибок** (20 модулей) |
+| Цикломатическая сложность (`radon`) | средняя ≤ 6, ни один блок вне baseline > 20, MI ≥ 20 | **средняя 4.42 (A)**, 124 блока, MI min 23.0 |
+| Baseline сложных функций | не расти; только сокращать | 2 записи: `evaluate_retrieval` (33), `index_metadata` (30) — см. `scripts/check_complexity.py` |
+| Покрытие тестами | floor 25 %, цель 60 % | **26 %** (растёт с рефакторингом, ADR не требуется) |
+
+Гейт сложности — **ratcheting**: известные функции зафиксированы в baseline,
+любой новый блок сложнее 20 или рост существующего ломает сборку. Baseline можно
+только сокращать: после рефакторинга запись удаляется вместе с кодом.
+
 
 ## Структура репозитория
 

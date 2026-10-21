@@ -36,7 +36,7 @@ jobs:
       - name: Install light dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy pytest ruff mypy
+          pip install numpy pytest pytest-cov ruff mypy radon
 
       - name: Lint (ruff)
         run: ruff check .
@@ -44,7 +44,13 @@ jobs:
       - name: Type check (mypy)
         run: mypy
 
-      - name: Unit tests (pytest)
-        run: pytest -q
+      # Ratcheting gate: known complex functions are listed in the script
+      # baseline; any new block above threshold (or growth of a baseline entry)
+      # fails the build.
+      - name: Complexity gate (radon)
+        run: python scripts/check_complexity.py
+
+      - name: Unit tests (pytest + coverage)
+        run: pytest -q --cov=src/mcp_1c_rag --cov-report=term-missing --cov-fail-under=25
         env:
           PYTHONPATH: src

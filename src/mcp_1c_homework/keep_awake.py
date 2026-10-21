@@ -15,15 +15,23 @@ _ES_AWAYMODE_REQUIRED = 0x00000040
 _armed = False
 
 
+def _set_thread_execution_state(flags: int) -> None:
+    """Call the Windows API; kept separate so mypy is happy on non-Windows CI."""
+    import ctypes
+
+    # ``ctypes.windll`` exists only on Windows; getattr avoids a hard attribute
+    # reference that fails type checking on Linux/macOS.
+    getattr(ctypes, "windll").kernel32.SetThreadExecutionState(flags)
+
+
 def prevent_sleep() -> None:
     """Hold an execution state request so the PC should not idle-sleep."""
     global _armed
     if sys.platform != "win32":
         return
-    import ctypes
 
     flags = _ES_CONTINUOUS | _ES_SYSTEM_REQUIRED | _ES_AWAYMODE_REQUIRED
-    ctypes.windll.kernel32.SetThreadExecutionState(flags)
+    _set_thread_execution_state(flags)
     if not _armed:
         atexit.register(allow_sleep)
         _armed = True
@@ -34,7 +42,6 @@ def allow_sleep() -> None:
     global _armed
     if sys.platform != "win32":
         return
-    import ctypes
 
-    ctypes.windll.kernel32.SetThreadExecutionState(_ES_CONTINUOUS)
+    _set_thread_execution_state(_ES_CONTINUOUS)
     _armed = False

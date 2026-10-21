@@ -252,7 +252,7 @@ def build() -> Path:
     cards = [
         ("124 253", "чанка в индексе"),
         ("233 515", "термов в BM25"),
-        ("0.378", "nDCG@10 у hybrid"),
+        ("0.199", "nDCG@10 у hybrid"),
         ("33", "unit-теста, CI зелёный"),
     ]
     x = MARGIN
@@ -397,8 +397,8 @@ def build() -> Path:
     res = text(slide, Inches(7.0), Inches(2.3), Inches(5.8), Inches(4.2),
                "Что дало (nDCG@10)", size=18, bold=True, color=NAVY)
     for item in [
-        "vector: 0.223 ± 0.012",
-        "hybrid (RRF): 0.378 ± 0.003  →  +69 %",
+        "vector: 0.143 ± 0.023",
+        "hybrid (RRF): 0.199 ± 0.015  →  +39 %",
         "Латентность: ~60–100 мс/запрос",
         "Разброс ±0.003 — вывод устойчив к пересборке HNSW",
     ]:
@@ -439,8 +439,8 @@ def build() -> Path:
         add_para(box, item, size=15)
     res = text(slide, Inches(7.0), Inches(1.3), Inches(5.8), Inches(4.4),
                "Результат", size=18, bold=True, color=NAVY)
-    add_para(res, "nDCG@10: 0.378 → 0.134 (−65 %)", size=15, color=RED, bullet=True)
-    add_para(res, "Латентность: ×35 медленнее hybrid", size=15, bullet=True)
+    add_para(res, "nDCG@10: 0.199 → 0.078 (−61 %)", size=15, color=RED, bullet=True)
+    add_para(res, "Латентность: ×26 медленнее hybrid", size=15, bullet=True)
     add_para(res, "Гипотеза: модель обучена на веб-пассажах, а BSL — длинный повторяющийся код",
              size=14, bullet=True)
     add_para(res, "Решение: режим оставлен опцией, дефолт — hybrid (ADR 0002)", size=14,
@@ -480,10 +480,10 @@ def build() -> Path:
         slide,
         [
             ["Конфигурация", "Hit@1", "MRR@10", "nDCG@10", "Recall@10", "мс/запрос"],
-            ["vector", "0.044 ± 0.016", "0.123 ± 0.018", "0.223 ± 0.012", "0.243 ± 0.027", "~50–90"],
-            ["pearson", "0.111 ± 0.016", "0.170 ± 0.018", "0.272 ± 0.022", "0.239 ± 0.021", "~90–155"],
-            ["hybrid (RRF)", "0.100 ± 0.000", "0.193 ± 0.003", "0.378 ± 0.003", "0.311 ± 0.016", "~60–100"],
-            ["hybrid_rerank", "0.000", "0.053", "0.134", "0.167", "~1100–6000"],
+            ["vector", "0.022 ± 0.016", "0.109 ± 0.020", "0.143 ± 0.023", "0.248 ± 0.029", "~36"],
+            ["pearson", "0.078 ± 0.016", "0.148 ± 0.017", "0.165 ± 0.017", "0.244 ± 0.016", "~61"],
+            ["hybrid (RRF)", "0.100 ± 0.000", "0.183 ± 0.010", "0.199 ± 0.015", "0.289 ± 0.027", "~43"],
+            ["hybrid_rerank", "0.000", "0.048", "0.078", "0.133", "~1100"],
         ],
         MARGIN,
         Inches(1.3),
@@ -494,7 +494,7 @@ def build() -> Path:
     )
     chart_data = CategoryChartData()
     chart_data.categories = ["vector", "pearson", "hybrid", "hybrid_rerank"]
-    chart_data.add_series("nDCG@10", (0.223, 0.272, 0.378, 0.134))
+    chart_data.add_series("nDCG@10", (0.143, 0.165, 0.199, 0.078))
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         MARGIN,
@@ -557,7 +557,7 @@ def build() -> Path:
         "MCP-сервер с 4 инструментами и локальным индексом на 124 тыс. чанков",
         "Гибридный retrieval: глобальный BM25 + RRF + опциональный cross-encoder",
         "Eval-контур: gold-set, file-level метрики, mean ± std, бенчмарк латентности",
-        "Инженерная обвязка: 33 теста, ruff, mypy, GitHub Actions, ADR, CHANGELOG",
+        "Инженерная обвязка: 39 тестов, ruff, mypy, GitHub Actions, ADR, CHANGELOG",
     ]:
         add_para(box, item, size=15)
     box2 = text(slide, MARGIN, Inches(4.55), W - 2 * MARGIN, Inches(1.6),

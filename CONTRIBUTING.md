@@ -19,7 +19,7 @@ pip install -e ".[dev]"
 ```powershell
 ruff check .        # линтер
 mypy                # типы
-pytest -q           # unit-тесты (33)
+pytest -q           # unit-тесты (39)
 ```
 
 Все три проверки должны проходить; CI повторит их на Python 3.11 и 3.12.

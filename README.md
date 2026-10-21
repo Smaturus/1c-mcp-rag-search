@@ -1,4 +1,4 @@
-# MCP + RAG for 1C: local semantic search (no Docker)
+# MCP + RAG for 1C: local semantic search
 
 [![CI](https://github.com/Smaturus/mcp-1c-homework/actions/workflows/ci.yml/badge.svg)](https://github.com/Smaturus/mcp-1c-homework/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)

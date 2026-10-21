@@ -36,6 +36,21 @@ jobs:
         run: mypy
 
       - name: Unit tests (pytest)
-        run: pytest -q
+        id: pytest
+        continue-on-error: true
+        shell: bash
         env:
           PYTHONPATH: src
+        run: |
+          set +e
+          pytest -q 2>&1 | tee pytest.log
+          code=${PIPESTATUS[0]}
+          echo "PYTEST_EXIT=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Publish pytest diagnostics
+        if: always()
+        shell: bash
+        run: |
+          msg=$(tail -n 25 pytest.log | tr '\n' ' ' | tr -d '"\\')
+          echo "::error title=pytest-diag::$msg"
+          exit 1

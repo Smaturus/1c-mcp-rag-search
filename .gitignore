@@ -47,6 +47,7 @@ cover_letters/
 # Personal / working notes (not part of the delivered project)
 progress.md
 Промпт_*.md
+docs/presentation/PRESENTATION_SPEECH.md
 .mypy_cache*/
 .ruff_cache/
 .cursor/

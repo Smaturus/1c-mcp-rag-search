@@ -1,0 +1,80 @@
+"""Persistent Chroma collections for code and metadata."""
+
+from __future__ import annotations
+
+import contextlib
+from typing import Any
+
+import chromadb
+from chromadb.api.models.Collection import Collection
+
+from mcp_1c_homework.config import (
+    CHROMA_DIR,
+    COLLECTION_CODE,
+    COLLECTION_METADATA,
+)
+from mcp_1c_homework.index_guard import refuse_if_foreign_writer
+
+
+def get_client() -> Any:
+    """Open persistent Chroma client under project data/chroma.
+
+    Returns ``Any`` because ``chromadb.PersistentClient`` is a factory function,
+    not a type; the concrete client type is an implementation detail of Chroma.
+
+    Refuses while another process holds the indexer lock, so search cannot
+    open the base next to the writer.
+    """
+    refuse_if_foreign_writer()
+    CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+    return chromadb.PersistentClient(path=str(CHROMA_DIR))
+
+
+def get_collection(name: str, *, reset: bool = False) -> Collection:
+    """Get or create a named collection; optionally drop first."""
+    client = get_client()
+    if reset:
+        with contextlib.suppress(Exception):
+            client.delete_collection(name)
+    return client.get_or_create_collection(
+        name=name,
+        metadata={"hnsw:space": "cosine"},
+    )
+
+
+def get_code_collection(*, reset: bool = False) -> Collection:
+    return get_collection(COLLECTION_CODE, reset=reset)
+
+
+def get_metadata_collection(*, reset: bool = False) -> Collection:
+    return get_collection(COLLECTION_METADATA, reset=reset)
+
+
+def query_collection(
+    collection: Collection,
+    query_embedding: list[float],
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Run nearest-neighbour search and flatten Chroma response."""
+    if limit < 1:
+        limit = 1
+    raw = collection.query(
+        # Chroma's stubs type query_embeddings as ndarray; a list of float lists
+        # is the documented public form and works at runtime.
+        query_embeddings=[query_embedding],  # type: ignore[arg-type]
+        n_results=min(limit, max(collection.count(), 1)),
+        include=["documents", "metadatas", "distances"],
+    )
+    docs = (raw.get("documents") or [[]])[0]
+    metas = (raw.get("metadatas") or [[]])[0]
+    dists = (raw.get("distances") or [[]])[0]
+    results: list[dict[str, Any]] = []
+    for doc, meta, dist in zip(docs, metas, dists, strict=False):
+        results.append(
+            {
+                "text": doc or "",
+                "metadata": meta or {},
+                "distance": dist,
+            }
+        )
+    return results

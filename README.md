@@ -364,7 +364,7 @@ MIT — см. [LICENSE](LICENSE).
 
 ## Контакты
 
-**Sergey Matyukhin** — AI/LLM инженер (в переходе), Москва.
+**Sergey Matyukhin** — AI/LLM, Москва.
 
 - GitHub: [@Smaturus](https://github.com/Smaturus)
 - Email: [smaturus@gmail.com](mailto:smaturus@gmail.com)

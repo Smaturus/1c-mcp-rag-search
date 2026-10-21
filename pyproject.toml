@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "1c-mcp-rag-search"
-version = "0.2.1"
+version = "0.2.2"
 description = "MCP server with hybrid RAG retrieval (cosine + BM25 + RRF) over 1C BSL code and configuration metadata, no Docker"
 readme = "README.md"
 requires-python = ">=3.11"

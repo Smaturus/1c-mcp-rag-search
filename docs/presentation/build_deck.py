@@ -252,7 +252,7 @@ def build() -> Path:
     cards = [
         ("124 253", "чанка в индексе"),
         ("233 515", "термов в BM25"),
-        ("0.199", "nDCG@10 у hybrid"),
+        ("0.209", "nDCG@10 у hybrid"),
         ("33", "unit-теста, CI зелёный"),
     ]
     x = MARGIN
@@ -265,7 +265,7 @@ def build() -> Path:
         "Эмбеддинги: intfloat/multilingual-e5-small (384d, префиксы query: / passage:)",
         "Хранение: Chroma 1.5.9, HNSW cosine; лексика: собственный инвертированный индекс",
         "Гибрид: Reciprocal Rank Fusion (k = 60); reranker: flashrank + ms-marco-MultiBERT-L-12",
-        "Интерфейс: MCP stdio (Cursor / ZCode), 4 инструмента; eval: 30 запросов, 4 конфигурации",
+        "Интерфейс: MCP stdio (Cursor / ZCode), 4 инструмента; eval: 70 запросов, 4 конфигурации",
     ]:
         add_para(box, item, size=15)
     notes(slide, "Ключевые числа проекта. 124 тысячи чанков — полный индекс configuration: 100 445 чанков кода и 23 808 метаданных.")
@@ -397,12 +397,12 @@ def build() -> Path:
     res = text(slide, Inches(7.0), Inches(2.3), Inches(5.8), Inches(4.2),
                "Что дало (nDCG@10)", size=18, bold=True, color=NAVY)
     for item in [
-        "vector: 0.143 ± 0.023",
-        "hybrid (RRF): 0.199 ± 0.015  →  +39 %",
-        "Латентность: ~60–100 мс/запрос",
+        "vector: 0.176 ± 0.005",
+        "hybrid (RRF): 0.209 ± 0.003  →  +19 %",
+        "Латентность: ~60 мс/запрос",
         "Разброс ±0.003 — вывод устойчив к пересборке HNSW",
     ]:
-        add_para(res, item, size=15, color=GREEN if "+69" in item else INK)
+        add_para(res, item, size=15, color=GREEN if "+19" in item else INK)
     strip = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, MARGIN, Inches(4.62),
                                    W - 2 * MARGIN, Inches(1.0))
     strip.fill.solid()
@@ -439,8 +439,8 @@ def build() -> Path:
         add_para(box, item, size=15)
     res = text(slide, Inches(7.0), Inches(1.3), Inches(5.8), Inches(4.4),
                "Результат", size=18, bold=True, color=NAVY)
-    add_para(res, "nDCG@10: 0.199 → 0.078 (−61 %)", size=15, color=RED, bullet=True)
-    add_para(res, "Латентность: ×26 медленнее hybrid", size=15, bullet=True)
+    add_para(res, "nDCG@10: 0.209 → 0.069 (−67 %)", size=15, color=RED, bullet=True)
+    add_para(res, "Латентность: ×18 медленнее hybrid", size=15, bullet=True)
     add_para(res, "Гипотеза: модель обучена на веб-пассажах, а BSL — длинный повторяющийся код",
              size=14, bullet=True)
     add_para(res, "Решение: режим оставлен опцией, дефолт — hybrid (ADR 0002)", size=14,
@@ -455,7 +455,7 @@ def build() -> Path:
     box = text(slide, MARGIN, Inches(1.3), Inches(6.2), Inches(4.6),
                "Данные и метрики", size=18, bold=True, color=NAVY)
     for item in [
-        "gold-set: 30 запросов (10 курируемых + 20 из реальных модулей)",
+        "gold-set v2: 70 запросов (30 курируемых + 40 по объектам конфигурации)",
         "Три типа: exact (точное имя), semantic (смысл), trap (ловушка)",
         "Релевантность — на уровне файла-источника, а не отдельного чанка",
         "Метрики: Hit@1, MRR@10, nDCG@10, Recall@10",
@@ -475,15 +475,15 @@ def build() -> Path:
                  "Первая версия gold-set была с дефектом — исправили и задокументировали в ADR 0003.")
 
     # 10. Results
-    slide = slide_frame(prs, "Результаты на gold-set (30 запросов, k = 10)", 10)
+    slide = slide_frame(prs, "Результаты на gold-set v2 (70 запросов, k = 10)", 10)
     table(
         slide,
         [
             ["Конфигурация", "Hit@1", "MRR@10", "nDCG@10", "Recall@10", "мс/запрос"],
-            ["vector", "0.022 ± 0.016", "0.109 ± 0.020", "0.143 ± 0.023", "0.248 ± 0.029", "~36"],
-            ["pearson", "0.078 ± 0.016", "0.148 ± 0.017", "0.165 ± 0.017", "0.244 ± 0.016", "~61"],
-            ["hybrid (RRF)", "0.100 ± 0.000", "0.183 ± 0.010", "0.199 ± 0.015", "0.289 ± 0.027", "~43"],
-            ["hybrid_rerank", "0.000", "0.048", "0.078", "0.133", "~1100"],
+            ["vector", "0.076 ± 0.007", "0.127 ± 0.005", "0.176 ± 0.005", "0.310 ± 0.015", "~56"],
+            ["pearson", "0.090 ± 0.007", "0.139 ± 0.002", "0.194 ± 0.006", "0.348 ± 0.026", "~99"],
+            ["hybrid (RRF)", "0.090 ± 0.007", "0.158 ± 0.003", "0.209 ± 0.003", "0.352 ± 0.007", "~63"],
+            ["hybrid_rerank", "0.014", "0.047", "0.069", "0.136", "~1100"],
         ],
         MARGIN,
         Inches(1.3),
@@ -494,7 +494,7 @@ def build() -> Path:
     )
     chart_data = CategoryChartData()
     chart_data.categories = ["vector", "pearson", "hybrid", "hybrid_rerank"]
-    chart_data.add_series("nDCG@10", (0.143, 0.165, 0.199, 0.078))
+    chart_data.add_series("nDCG@10", (0.176, 0.194, 0.209, 0.069))
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         MARGIN,

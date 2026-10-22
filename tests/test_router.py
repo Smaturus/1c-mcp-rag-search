@@ -86,3 +86,24 @@ def test_english_code_identifier_is_lexical() -> None:
 def test_semantic_with_exact_name_is_hybrid() -> None:
     decision = route_query("Как сделать, чтобы документ РеализацияТоваровУслуг не падал?")
     assert decision.route is Route.HYBRID
+
+
+CASES_FILE = ROOT / "data" / "eval" / "routing_cases.jsonl"
+
+
+def test_all_labelled_routing_cases() -> None:
+    """Контракт целиком: 24 базовых + 15 кейсов заказчика (tests/Router_tets_cases.txt)."""
+    import json
+
+    rows = [
+        json.loads(line)
+        for line in CASES_FILE.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(rows) >= 39
+    mismatches = []
+    for row in rows:
+        decision = route_query(row["query"])
+        if decision.route.value != row["expected"]:
+            mismatches.append((row["query"], row["expected"], decision.route.value))
+    assert not mismatches, mismatches

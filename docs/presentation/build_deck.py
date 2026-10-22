@@ -238,7 +238,7 @@ def build() -> Path:
     box2 = text(slide, Inches(6.85), Inches(1.35), Inches(5.9), Inches(0.5),
                 "Решение", size=20, bold=True, color=NAVY)
     for item in [
-        "Свой MCP-сервер (stdio): codesearch, metadatasearch, search, evaluate_retrieval",
+        "Свой MCP-сервер (stdio): 8 инструментов, включая маршрутизацию запросов",
         "Полностью локальный контур: e5-small + Chroma, работает на CPU",
         "Гибридный поиск: cosine + глобальный BM25 через RRF",
         "Измеримость: gold-set, file-level метрики, разброс по прогонам",
@@ -253,7 +253,7 @@ def build() -> Path:
         ("124 253", "чанка в индексе"),
         ("233 515", "термов в BM25"),
         ("0.209", "nDCG@10 у hybrid"),
-        ("33", "unit-теста, CI зелёный"),
+        ("71", "unit-тест, CI зелёный"),
     ]
     x = MARGIN
     for value, label in cards:
@@ -329,7 +329,8 @@ def build() -> Path:
     left.text_frame.paragraphs[0].runs[0].text = ""
     for item in [
         "124 253 чанка: code 100 445, metadata 23 808",
-        "e5-small: 384 измерения, L2-нормализация",
+        "e5-small: 384 измерения, лимит 512 токенов на чанк",
+        "Проверка: 32,1 % чанков были длиннее лимита — исправляем нарезкой по процедурам",
         "Префиксы e5 сохранены: passage: для документов, query: для запросов",
         "HNSW cosine; sync_threshold = 1e6 — защита от бага chroma#7090",
         "Размер базы 2.3 ГБ; старт пересобирает HNSW из WAL (~60–70 с)",
@@ -357,28 +358,29 @@ def build() -> Path:
         slide,
         [
             ["Инструмент", "Что делает"],
-            ["codesearch(query, limit)", "семантический поиск по .bsl (cosine baseline)"],
-            ["metadatasearch(query, limit)", "поиск по отчёту конфигурации"],
-            ["search(query, top_k, mode)", "единый пайплайн: vector / hybrid / hybrid_rerank / pearson"],
-            ["evaluate_retrieval(query, k)", "Hit@k, Recall@k, MRR, nDCG, null-tail по одному запросу"],
+            ["search_1c_metadata(query, limit)", "grep-подобный BM25: точные имена, проводки, движения"],
+            ["search_knowledge_base(query, limit)", "vector: «как сделать», «почему не работает», инструкции"],
+            ["search_hybrid(query, limit)", "RRF: смешанные вопросы и требования — безопасный дефолт"],
+            ["route_query(query)", "объясняет выбор: маршрут, причина, уверенность"],
+            ["search / codesearch / evaluate_retrieval", "исторические инструменты и метрики по запросу"],
         ],
         MARGIN,
-        Inches(1.35),
+        Inches(1.3),
         W - 2 * MARGIN,
-        Inches(2.5),
-        col_widths=[5.2, 9.0],
-        size=14,
+        Inches(3.0),
+        col_widths=[5.6, 8.6],
+        size=13,
     )
-    box = text(slide, MARGIN, Inches(4.15), W - 2 * MARGIN, Inches(2.2),
+    box = text(slide, MARGIN, Inches(4.5), W - 2 * MARGIN, Inches(2.0),
                "Подключение", size=18, bold=True, color=NAVY)
     for item in [
         "stdio-транспорт: сервер поднимается клиентом (Cursor mcp.json, ZCode mcp.servers)",
-        "Режим по умолчанию — hybrid: выбран по замерам, а не по умолчанию библиотеки",
-        "Пример: search(\"начисление НДС с аванса\", top_k=5) → чанки BSL с источниками и скорами",
+        "Маршрутизация — код с тестами, а не текст промпта: 24 кейса, 100 % точности",
+        "Пример: route_query(\"проводки документа РеализацияТоваровУслуг\") → search_1c_metadata",
     ]:
         add_para(box, item, size=14)
-    notes(slide, "Четыре инструмента. Четвёртый — изюминка: он считает метрики по одному запросу прямо в чате, "
-                 "что удобно для демонстрации на защите.")
+    notes(slide, "Восемь инструментов. Ключевое отличие от обычного MCP-сервера — явный контракт "
+                 "маршрутизации: выбор инструмента объясним и проверяется тестами.")
 
     # 7. RRF
     slide = slide_frame(prs, "Гибридный поиск: Reciprocal Rank Fusion", 7)
@@ -531,6 +533,8 @@ def build() -> Path:
         "0001: RRF вместо взвешенного Pearson — выше метрики, без калибровки весов",
         "0002: reranker оставлен опцией — ухудшает качество на BSL",
         "0003: релевантность на уровне файла — устойчивые и воспроизводимые метрики",
+        "0006: маршрутизация запросов — код с тестами вместо текста промпта",
+        "0007: нарезка по процедурам — устранён лимит 512 токенов",
     ]:
         add_para(box, item, size=14)
     text(slide, Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.5),
@@ -554,17 +558,19 @@ def build() -> Path:
     box = text(slide, MARGIN, Inches(1.3), W - 2 * MARGIN, Inches(3.4),
                "Что сделано", size=18, bold=True, color=NAVY)
     for item in [
-        "MCP-сервер с 4 инструментами и локальным индексом на 124 тыс. чанков",
+        "MCP-сервер с 8 инструментами и локальным индексом на 124 тыс. чанков",
         "Гибридный retrieval: глобальный BM25 + RRF + опциональный cross-encoder",
-        "Eval-контур: gold-set, file-level метрики, mean ± std, бенчмарк латентности",
-        "Инженерная обвязка: 39 тестов, ruff, mypy, GitHub Actions, ADR, CHANGELOG",
+        "Маршрутизация запросов: контракт с тестами, 100 % на размеченных кейсах",
+        "Eval-контур: gold-set v2 (70 запросов), file-level метрики, mean ± std",
+        "Инженерная обвязка: 71 тест, ruff, mypy, complexity-гейт, CI, ADR, CHANGELOG",
     ]:
         add_para(box, item, size=15)
     box2 = text(slide, MARGIN, Inches(4.55), W - 2 * MARGIN, Inches(1.6),
                 "Развитие", size=18, bold=True, color=NAVY)
     for item in [
-        "Reranker, предобученный на коде; увеличение gold-set до 100 запросов",
-        "Опциональные веса источников в RRF и их сравнение",
+        "Сравнить chunking по процедурам с текущим на gold-set v2; решить о смене дефолта",
+        "Код-ориентированные эмбеддинги и новый baseline",
+        "Reranker, предобученный на коде; ручная разметка 100+ запросов",
     ]:
         add_para(box2, item, size=15)
     text(slide, MARGIN, Inches(6.35), W - 2 * MARGIN, Inches(0.6),

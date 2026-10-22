@@ -32,6 +32,13 @@ data/chroma_rebuilt_snapshot_*/
 data/test_tick_loop_report.json
 data/index_chat_last_report.json
 
+# Experimental indexes and their bookkeeping
+data/chroma_proc/
+data/bm25_code_proc/
+data/procedure_index_progress.json
+data/proc_build.log
+data/proc_build.err
+
 # Intermediate eval runs (the aggregated report_pipeline.md is tracked)
 data/eval/**/run_*.json
 

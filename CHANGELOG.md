@@ -5,6 +5,8 @@
 
 ## [0.3.0] — 2026-10-22
 
+- **Метаданные из XML-выгрузки** (`parse_config_xml.py`, `build_metadata_index.py`, ADR 0008): 5 911 объектов, 25 026 чанков (объект/реквизит/ТЧ/измерение/форма/команда/значение), словарь 11 850 имён. A/B на 300 кейсах: BM25 Hit@3 93,0 % → **99,7 %**. HNSW sync threshold (`MCP_1C_HNSW_SYNC_THRESHOLD`) обходит chroma#7090.
+
 ### Added
 
 - **Контракт маршрутизации** (`router.py`, ADR 0006): `route_query` и три

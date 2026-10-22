@@ -36,7 +36,7 @@ from mcp_1c_rag.config import CHROMA_DIR, DATA_DIR  # noqa: E402
 
 _PROC = re.compile(r"(?i)\b(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё0-9_]*)")
 
-# Курируемые запросы: файлы-эталоны заданы вручную по разбору выгрузки configuration.
+# Курируемые запросы: файлы-эталоны заданы вручную по разбору выгрузки конфигурации.
 CURATED: list[dict] = [
     {
         "id": "exact-peredzapisyu",

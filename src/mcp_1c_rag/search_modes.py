@@ -39,8 +39,7 @@ SearchMode = Literal["vector", "hybrid", "hybrid_rerank", "pearson"]
 _ID_PREFIX = {
     "code": "bsl:",
     "metadata": "meta:",
-    "meta_upp11": "metaobj:",
-    "code_proc": "bsl_proc:",
+    "metadata_xml": "metaobj:",
     "code_proc": "bsl_proc:",
 }
 

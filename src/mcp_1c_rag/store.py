@@ -12,6 +12,7 @@ from mcp_1c_rag.config import (
     CHROMA_DIR,
     COLLECTION_CODE,
     COLLECTION_METADATA,
+    HNSW_SYNC_THRESHOLD,
 )
 from mcp_1c_rag.index_guard import refuse_if_foreign_writer
 
@@ -36,9 +37,12 @@ def get_collection(name: str, *, reset: bool = False) -> Collection:
     if reset:
         with contextlib.suppress(Exception):
             client.delete_collection(name)
+    metadata: dict[str, Any] = {"hnsw:space": "cosine"}
+    if HNSW_SYNC_THRESHOLD > 0:
+        metadata["hnsw:sync_threshold"] = HNSW_SYNC_THRESHOLD
     return client.get_or_create_collection(
         name=name,
-        metadata={"hnsw:space": "cosine"},
+        metadata=metadata,
     )
 
 

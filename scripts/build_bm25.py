@@ -31,6 +31,11 @@ def main() -> int:
     ap.add_argument("--k1", type=float, default=BM25_K1)
     ap.add_argument("--b", type=float, default=BM25_B)
     ap.add_argument("--limit", type=int, default=0, help="ограничить число чанков (смоук)")
+    ap.add_argument(
+        "--id-prefix",
+        default="",
+        help="включить только документы с префиксом id (например bsl_proc:)",
+    )
     args = ap.parse_args()
 
     sqlite_path = args.chroma_dir / "chroma.sqlite3"
@@ -40,6 +45,8 @@ def main() -> int:
     def stream() -> Iterable[tuple[str, str]]:
         """Документы из sqlite (опционально ограниченные для смоука)."""
         items = docs_from_sqlite(sqlite_path)
+        if args.id_prefix:
+            items = ((doc_id, text) for doc_id, text in items if doc_id.startswith(args.id_prefix))
         return itertools.islice(items, args.limit) if args.limit else items
 
     t0 = time.time()

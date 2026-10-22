@@ -3,6 +3,32 @@
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.3.0] — 2026-10-22
+
+### Added
+
+- **Контракт маршрутизации** (`router.py`, ADR 0006): `route_query` и три
+  MCP-инструмента `search_1c_metadata` (BM25 lexical), `search_knowledge_base`
+  (vector), `search_hybrid`. Режим `search(mode="lexical")`. 24 размеченных
+  routing-кейса — 100 %; end-to-end nDCG@10 не хуже фиксированного hybrid.
+- **Chunking BSL по процедурам** (`chunking_procedures.py`, ADR 0007):
+  путь и имя процедуры в тексте чанка, части для длинных процедур, модули без
+  процедур — fallback. Смоук: покрытие кода 99,6 %, сверх лимита 512 токенов 0,3 %.
+- `scripts/build_procedure_index.py` — сборка отдельной коллекции `code_proc`
+  (отдельная база, чекпоинт, возобновление); `scripts/eval_chunking.py`,
+  `scripts/smoke_procedure_chunking.py`.
+- `scripts/check_embedding_tokens.py` — измерение лимита e5 на полном индексе:
+  32,1 % чанков длиннее 512 токенов (метаданные — 78 %).
+- `scripts/check_complexity.py` + CI-гейт сложности (radon) и покрытие с floor 25 %.
+- `scripts/eval_router.py`, `data/eval/routing_cases.jsonl`.
+
+### Changed
+
+- README: разделы «Маршрутизация запросов», «Chunking по процедурам»,
+  «Embedding model», «Quality gates»; позиционирование контактов —
+  Technology Executive | Enterprise AI & RAG Architecture.
+- `build_bm25.py`: параметр `--id-prefix` для отдельной коллекции.
+
 ## [0.2.2] — 2026-10-21
 
 ### Added

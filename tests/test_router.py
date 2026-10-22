@@ -92,7 +92,7 @@ CASES_FILE = ROOT / "data" / "eval" / "routing_cases.jsonl"
 
 
 def test_all_labelled_routing_cases() -> None:
-    """Контракт целиком: 24 базовых + 15 кейсов заказчика (tests/Router_tets_cases.txt)."""
+    """Контракт целиком: базовые + заказчик + Part-2 + N1–N15 (см. routing_cases.jsonl)."""
     import json
 
     rows = [
@@ -100,10 +100,11 @@ def test_all_labelled_routing_cases() -> None:
         for line in CASES_FILE.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
-    assert len(rows) >= 39
+    assert len(rows) >= 65
     mismatches = []
     for row in rows:
         decision = route_query(row["query"])
-        if decision.route.value != row["expected"]:
-            mismatches.append((row["query"], row["expected"], decision.route.value))
+        allowed = set(row["expected_any"]) if "expected_any" in row else {row["expected"]}
+        if decision.route.value not in allowed:
+            mismatches.append((row["query"], "|".join(sorted(allowed)), decision.route.value))
     assert not mismatches, mismatches

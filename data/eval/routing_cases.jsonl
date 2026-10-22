@@ -37,3 +37,32 @@
 {"id": "u13", "type": "customer", "query": "Как проверить движения документа по регистру Партионный учет, если остатки не сходятся?", "expected": "hybrid", "note": "customer #13: термины + смысл"}
 {"id": "u14", "type": "customer", "query": "При проведении ПоступлениеТиУ вылезает ошибка из общего модуля, который не вызывается", "expected": "hybrid", "note": "customer #14: имя + смысл"}
 {"id": "u15", "type": "customer", "query": "Как в 1С сделать так, чтобы документы не проводились задним числом?", "expected": "hybrid", "note": "customer #15: сомнительный → defolt hybrid"}
+{"id": "p2-01", "batch": "part2", "type": "exact", "query": "Проводки документа ПоступлениеТиУ по регистру ТоварыНаСкладах", "note": "", "expected": "lexical"}
+{"id": "p2-02", "batch": "part2", "type": "exact", "query": "Ошибка при проведении ВводНачальныхОстатковОС", "note": "", "expected": "lexical"}
+{"id": "p2-03", "batch": "part2", "type": "exact", "query": "Настройка УчетнаяПолитика в конфигурации", "note": "", "expected": "lexical"}
+{"id": "p2-04", "batch": "part2", "type": "exact", "query": "Функциональная опция ИспользоватьОбменВС отключилась", "note": "", "expected": "lexical"}
+{"id": "p2-05", "batch": "part2", "type": "exact", "query": "Кто пишет движения по регистру Продажи?", "note": "", "expected": "lexical"}
+{"id": "p2-06", "batch": "part2", "type": "exact", "query": "Документ ЗаказПоставщику, движения по регистру", "note": "", "expected": "lexical"}
+{"id": "p2-07", "batch": "part2", "type": "hybrid", "query": "В ЗаказПокупателю не создаются движения по регистру, что проверить?", "note": "", "expected": "hybrid"}
+{"id": "p2-08", "batch": "part2", "type": "hybrid", "query": "Нужно добавить реквизит в форму ЗаказПокупателю через расширение", "note": "", "expected": "hybrid"}
+{"id": "p2-09", "batch": "part2", "type": "hybrid", "query": "Как проверить движения документа по регистру ПартионныйУчет, если остатки не сходятся?", "note": "", "expected": "hybrid"}
+{"id": "p2-10", "batch": "part2", "type": "hybrid", "query": "При проведении ПоступлениеТиУ вылезает ошибка из общего модуля", "note": "", "expected": "hybrid"}
+{"id": "p2-11", "batch": "part2", "type": "hybrid", "query": "Как сделать чтобы документы не проводились задним числом?", "note": "", "expected": "hybrid"}
+{"id": "p2-12", "batch": "part2", "type": "edge", "query": "Где хранится реквизит Инициатор?", "note": "", "expected": "hybrid"}
+{"id": "p2-13", "batch": "part2", "type": "trap", "query": "Документ без движений", "note": "", "expected": "hybrid"}
+{"id": "p2-14", "batch": "part2", "type": "edge", "query": "регистр", "note": "", "expected": "lexical"}
+{"id": "p2-15", "batch": "part2", "type": "edge", "query": "инструкция", "note": "", "expected": "vector"}
+{"id": "p2-16", "batch": "part2", "type": "edge", "query": "РеализацияТоваровУслуг", "note": "", "expected": "lexical"}
+{"id": "p2-17", "batch": "part2", "type": "edge", "query": "Как получить остатки из регистра накопления ПартионныйУчет?", "note": "reviewer: RRF-путь допустим", "expected_any": ["lexical", "hybrid"]}
+{"id": "n01", "batch": "n-cases", "type": "regress", "query": "При проведении РеализацияТоваровУслуг вылезает ошибка", "note": "", "expected": "hybrid"}
+{"id": "n02", "batch": "n-cases", "type": "regress", "query": "Документ падает при проведении", "note": "", "expected": "hybrid"}
+{"id": "n03", "batch": "n-cases", "type": "regress", "query": "Система зависает на перепроведении РеализацияТоваровУслуг", "note": "", "expected": "hybrid"}
+{"id": "n04", "batch": "n-cases", "type": "regress", "query": "Документ без проводок", "note": "", "expected": "hybrid"}
+{"id": "n05", "batch": "n-cases", "type": "regress", "query": "Регистр без остатков", "note": "", "expected": "hybrid"}
+{"id": "n06", "batch": "n-cases", "type": "regress", "query": "Опция Инициатор включилась", "note": "", "expected": "hybrid"}
+{"id": "n07", "batch": "n-cases", "type": "regress", "query": "Поле Комментарий не заполняется", "note": "", "expected": "hybrid"}
+{"id": "n09", "batch": "n-cases", "type": "regress", "query": "Ошибка при проведении ПоступлениеТиУ", "note": "", "expected": "lexical"}
+{"id": "n10", "batch": "n-cases", "type": "regress", "query": "Документ без ошибок", "note": "", "expected": "hybrid"}
+{"id": "n11", "batch": "n-cases", "type": "regress", "query": "Как получить остатки на складе?", "note": "", "expected": "vector"}
+{"id": "n12", "batch": "n-cases", "type": "regress", "query": "реквизит Инициатор", "note": "", "expected": "hybrid"}
+{"id": "n13", "batch": "n-cases", "type": "regress", "query": "Как получить остатки из регистра накопления ТоварыНаСкладах", "note": "осознанно допускаем оба маршрута", "expected_any": ["lexical", "hybrid"]}

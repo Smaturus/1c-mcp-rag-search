@@ -1,0 +1,20 @@
+{"id": "b01", "batch": "part3_blind", "type": "exact", "query": "Какие движения по регистрам формирует документ ЗаказПоставщику?", "expected": "lexical"}
+{"id": "b02", "batch": "part3_blind", "type": "exact", "query": "В каких модулях проверяется ДатаЗапретаИзменения?", "expected": "lexical"}
+{"id": "b03", "batch": "part3_blind", "type": "exact", "query": "Какие проводки формирует ПоступлениеТиУ при оприходовании товаров?", "expected": "lexical"}
+{"id": "b04", "batch": "part3_blind", "type": "exact", "query": "Найди в конфигурации, где используется ИспользоватьОбменВС", "expected": "lexical"}
+{"id": "b05", "batch": "part3_blind", "type": "exact", "query": "Список измерений и ресурсов регистра ТоварыНаСкладах", "expected": "lexical"}
+{"id": "b06", "batch": "part3_blind", "type": "exact", "query": "Где в конфигурации реализованы обработчики проведения и какие документы их переопределяют?", "expected": "lexical"}
+{"id": "b07", "batch": "part3_blind", "type": "semantic", "query": "Как правильно оформить продажу товаров сторонней организации через комиссию?", "expected": "vector"}
+{"id": "b08", "batch": "part3_blind", "type": "semantic", "query": "Почему после закрытия месяца себестоимость на складе меняется задним числом?", "expected": "vector"}
+{"id": "b09", "batch": "part3_blind", "type": "semantic", "query": "Инструкция: как настроить обмен данными между двумя базами конфигурации", "expected": "vector"}
+{"id": "b10", "batch": "part3_blind", "type": "semantic", "query": "Что делать, если пользователи жалуются, что документы проводятся медленно в конце месяца?", "expected": "vector"}
+{"id": "b11", "batch": "part3_blind", "type": "semantic", "query": "Объясни разницу между оперативным и фактическим учетом остатков", "expected": "vector"}
+{"id": "b12", "batch": "part3_blind", "type": "hybrid", "query": "Почему РеализацияТоваровУслуг не списывает себестоимость по некоторым партиям?", "expected": "hybrid"}
+{"id": "b13", "batch": "part3_blind", "type": "hybrid", "query": "ЗаказПокупателю проводится без ошибок, но остатки на складах не уменьшаются — разберись, в чем причина", "expected": "hybrid"}
+{"id": "b14", "batch": "part3_blind", "type": "hybrid", "query": "Как настроить ВводНачальныхОстатковОС, чтобы бухгалтерские и налоговые остатки не расходились?", "expected": "hybrid"}
+{"id": "b15", "batch": "part3_blind", "type": "hybrid", "query": "При проведении ПоступлениеТиУ вылетает ошибка о нарушении последовательности — что это значит и как лечить?", "expected": "hybrid"}
+{"id": "b16", "batch": "part3_blind", "type": "hybrid", "query": "УчетнаяПолитика: объясни, как способ расчета себестоимости влияет на ПартионныйУчет", "expected": "hybrid"}
+{"id": "b17", "batch": "part3_blind", "type": "trap", "query": "Не трогай РеализацияТоваровУслуг, просто словами объясни, зачем вообще нужен партионный учет", "expected": "vector"}
+{"id": "b18", "batch": "part3_blind", "type": "trap", "query": "Ищу документ СписаниеТоваровИзЯчейки, в какой конфигурации он есть?", "expected": "lexical"}
+{"id": "b19", "batch": "part3_blind", "type": "edge", "query": "", "expected": "hybrid"}
+{"id": "b20", "batch": "part3_blind", "type": "edge", "query": "config_stats", "expected": "hybrid"}

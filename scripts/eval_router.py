@@ -45,21 +45,29 @@ def _read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _expected_set(case: dict) -> set[str]:
+    """Допустимые маршруты: ``expected`` или ``expected_any`` (список)."""
+    if "expected_any" in case:
+        return set(case["expected_any"])
+    return {case["expected"]}
+
+
 def _routing_accuracy(cases: list[dict]) -> tuple[float, dict, dict]:
     correct = 0
     confusion: dict[str, Counter[str]] = defaultdict(Counter)
     failures: list[dict] = []
     for case in cases:
         decision = route_query(case["query"])
-        expected = case["expected"]
-        confusion[expected][decision.route.value] += 1
-        if decision.route.value == expected:
+        expected = _expected_set(case)
+        primary = case.get("expected") or sorted(expected)[0]
+        confusion[primary][decision.route.value] += 1
+        if decision.route.value in expected:
             correct += 1
         else:
             failures.append(
                 {
                     "query": case["query"],
-                    "expected": expected,
+                    "expected": "|".join(sorted(expected)),
                     "actual": decision.route.value,
                     "reason": decision.reason,
                 }
@@ -83,20 +91,26 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Evaluate query router")
     ap.add_argument("--routing-only", action="store_true",
                     help="только точность маршрута, без end-to-end прогона поиска")
+    ap.add_argument("--cases", type=Path, default=CASES,
+                    help="файл кейсов (JSONL); по умолчанию основной набор")
+    ap.add_argument("--report-md", type=Path, default=REPORT_MD)
+    ap.add_argument("--report-json", type=Path, default=REPORT_JSON)
+    ap.add_argument("--skip-e2e", action="store_true",
+                    help="не считать end-to-end (например, для hold-out/блайнда)")
     args = ap.parse_args()
 
-    cases = _read_jsonl(CASES)
+    cases = _read_jsonl(args.cases)
     rows = _read_jsonl(GOLDEN)
 
     accuracy, confusion, details = _routing_accuracy(cases)
-    wrote_e2e = not args.routing_only
+    wrote_e2e = not (args.routing_only or args.skip_e2e)
     routed = _e2e(lambda row: MODE_BY_ROUTE[route_query(row["query"]).route], rows) if wrote_e2e else {}
     fixed = _e2e(lambda _row: "hybrid", rows) if wrote_e2e else {}
 
     lines = [
         "# Оценка роутера запросов",
         "",
-        f"- routing-кейсов: {len(cases)} (ручная разметка по контракту)",
+        f"- кейсов: {len(cases)} из `{args.cases.name}`",
         f"- **точность маршрута: {accuracy:.1%}** "
         f"({round(accuracy * len(cases))}/{len(cases)})",
         "",
@@ -134,9 +148,9 @@ def main() -> int:
             "если ухудшает — дефолт остаётся `hybrid`, а правила фиксируются как эвристика.",
         ]
 
-    REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    REPORT_JSON.write_text(
+    args.report_md.parent.mkdir(parents=True, exist_ok=True)
+    args.report_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    args.report_json.write_text(
         json.dumps(
             {
                 "routing_cases": len(cases),

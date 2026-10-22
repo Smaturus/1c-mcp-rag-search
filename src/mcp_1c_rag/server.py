@@ -8,6 +8,9 @@ from mcp_1c_rag import eval_retrieval as eval_mod
 from mcp_1c_rag import search as legacy_search
 from mcp_1c_rag import search_modes
 from mcp_1c_rag.index_guard import IndexBusy
+from mcp_1c_rag.models import Candidate
+from mcp_1c_rag.router import Route
+from mcp_1c_rag.router import route_query as route_decision
 
 mcp = MCPServer(
     "1c-mcp-rag-search",
@@ -89,7 +92,8 @@ def search(
     Args:
         query: Natural-language or exact-name query (e.g. "НДС с аванса").
         top_k: How many results to return (default 5).
-        mode: vector | hybrid | hybrid_rerank | pearson; empty = server default.
+        mode: lexical | vector | hybrid | hybrid_rerank | pearson;
+            empty = server default.
         collection: code (BSL) or metadata (configuration report).
     """
     try:
@@ -110,6 +114,104 @@ def search(
     except ValueError as exc:
         return f"{exc}"
     return search_modes.format_candidates(candidates)
+
+
+_MODE_BY_ROUTE = {
+    Route.LEXICAL: "lexical",
+    Route.VECTOR: "vector",
+    Route.HYBRID: "hybrid",
+}
+
+
+def _merged_search(query: str, mode: str, limit: int) -> str:
+    """Поиск по обеим коллекциям с нормализацией скоров и объединением."""
+    found: list[tuple[float, Candidate]] = []
+    for collection in ("code", "metadata"):
+        try:
+            candidates = search_modes.search(
+                query=query, top_k=limit, mode=mode, collection=collection
+            )
+        except FileNotFoundError:
+            continue
+        if not candidates:
+            continue
+        top = max(candidate.score for candidate in candidates) or 1.0
+        for candidate in candidates:
+            candidate.metadata["collection"] = collection
+            found.append((candidate.score / top, candidate))
+    found.sort(key=lambda pair: pair[0], reverse=True)
+    seen: set[str] = set()
+    unique = []
+    for _, candidate in found:
+        if candidate.id in seen:
+            continue
+        seen.add(candidate.id)
+        unique.append(candidate)
+    return search_modes.format_candidates(unique[:limit])
+
+
+@mcp.tool()
+def search_1c_metadata(query: str, limit: int = 10) -> str:
+    """Grep-like lexical search for exact 1C names, handlers and relations.
+
+    Use for exact object/procedure names (РеализацияТоваровУслуг, ПередЗаписью),
+    questions about "движения", "проводки", "кто пишет в регистр", "на основании",
+    "связанные документы". Backed by the global BM25 index over both collections,
+    so it ranks matches instead of dumping raw grep lines.
+
+    Args:
+        query: Exact name or a question with exact terms.
+        limit: Max results (default 10).
+    """
+    return _merged_search(query, "lexical", max(1, int(limit)))
+
+
+@mcp.tool()
+def search_knowledge_base(query: str, limit: int = 10) -> str:
+    """Semantic (vector) search for "how to" and troubleshooting questions.
+
+    Use for how-to, instructions, "почему не работает", best practices, experience.
+    Backed by e5-small cosine over both collections.
+
+    Args:
+        query: Natural-language question.
+        limit: Max results (default 10).
+    """
+    return _merged_search(query, "vector", max(1, int(limit)))
+
+
+@mcp.tool()
+def search_hybrid(query: str, limit: int = 10) -> str:
+    """Hybrid search (cosine + BM25 via RRF) for mixed or requirement queries.
+
+    Use when the question mixes an exact term with meaning, or asks for current
+    requirements (Confluence / ТЗ / регламент). This is also the safe default.
+
+    Args:
+        query: Mixed natural-language and exact-term question.
+        limit: Max results (default 10).
+    """
+    return _merged_search(query, "hybrid", max(1, int(limit)))
+
+
+@mcp.tool()
+def route_query(query: str) -> str:
+    """Explain which search tool to use for a query, and why.
+
+    Applies the routing contract: lexical for exact names/relations, vector for
+    how-to questions, hybrid for mixed or requirement queries (and for anything
+    unclear). Returns route, tool, reason and confidence.
+
+    Args:
+        query: The user question to classify.
+    """
+    decision = route_decision(query)
+    return (
+        f"route={decision.route.value}\n"
+        f"tool={decision.tool}\n"
+        f"confidence={decision.confidence}\n"
+        f"reason={decision.reason}"
+    )
 
 
 def main() -> None:

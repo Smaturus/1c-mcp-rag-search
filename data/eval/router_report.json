@@ -1,0 +1,24 @@
+{
+  "routing_cases": 24,
+  "accuracy": 1.0,
+  "confusion": {
+    "lexical": {
+      "lexical": 8
+    },
+    "vector": {
+      "vector": 8
+    },
+    "hybrid": {
+      "hybrid": 8
+    }
+  },
+  "failures": [],
+  "fixed_hybrid": {
+    "ndcg@10": 0.2157332880984554,
+    "recall@10": 0.37142857142857144
+  },
+  "routed": {
+    "ndcg@10": 0.2157332880984554,
+    "recall@10": 0.35714285714285715
+  }
+}

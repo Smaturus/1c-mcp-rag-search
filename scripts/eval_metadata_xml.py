@@ -114,7 +114,7 @@ def main() -> int:
     objects = _read(DATA / "objects.jsonl")
     chunks = [c for c in _read(DATA / "chunks.jsonl") if c["metadata"].get("kind_tag") not in {
         "CommonPicture", "Style", "StyleItem", "Interface", "Language", "WSReference", "XDTOPackage", "Role"}]
-    bm25 = Bm25Index.build(((c["id"], c["text"]) for c in chunks))
+    bm25 = Bm25Index.build((c["id"], c["text"]) for c in chunks)
     collection = get_collection(COLLECTION)
 
     cases = _query_cases(objects, args.limit)

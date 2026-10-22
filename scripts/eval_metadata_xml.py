@@ -42,7 +42,7 @@ def _query_cases(objects: list[dict], limit: int, seed: int = 42) -> list[dict]:
             cases.append(
                 {
                     "kind": "object",
-                    "query": f"какие реквизиты у {record['kind_ru'].lower()} {record['name']}",
+                    "query": f"реквизиты {record['kind_ru'].lower()} {record['name']}",
                     "expect_name": record["name"],
                     "expect_level": "object",
                 }
@@ -51,7 +51,7 @@ def _query_cases(objects: list[dict], limit: int, seed: int = 42) -> list[dict]:
             cases.append(
                 {
                     "kind": "register",
-                    "query": f"список измерений регистра {record['name']}",
+                    "query": f"измерения и ресурсы регистра {record['name']}",
                     "expect_name": record["name"],
                     "expect_level": "object",
                 }
@@ -60,7 +60,7 @@ def _query_cases(objects: list[dict], limit: int, seed: int = 42) -> list[dict]:
             cases.append(
                 {
                     "kind": "enum",
-                    "query": f"какие значения у перечисления {record['name']}",
+                    "query": f"значения перечисления {record['name']}",
                     "expect_name": record["name"],
                     "expect_level": "object",
                 }
@@ -69,7 +69,12 @@ def _query_cases(objects: list[dict], limit: int, seed: int = 42) -> list[dict]:
             cases.append(
                 {
                     "kind": "attribute",
-                    "query": f"где хранится реквизит {attribute['name']}",
+                    # Имя объекта обязательно в запросе: иначе «Организация» есть у сотен
+                    # объектов и проверка на конкретный объект несправедлива.
+                    "query": (
+                        f"у {record['kind_ru'].lower()} {record['name']} "
+                        f"где хранится реквизит {attribute['name']}"
+                    ),
                     "expect_name": record["name"],
                     "expect_level": "реквизит",
                     "expect_field": attribute["name"],
@@ -94,14 +99,22 @@ def _vector_search(query: str, collection, top_k: int) -> list[dict]:
 
 
 def _matches(items: list[dict], case: dict, top_k: int) -> bool:
-    """Проверить, что в top-k есть нужный объект/реквизит (структурная истина)."""
+    """Проверить, что в top-k есть нужный объект/реквизит (структурная истина).
+
+    Для объектного вопроса достаточно любого чанка с этим именем (сводка объекта
+    или его реквизит — оба релевантны). Для вопроса про реквизит нужен чанк
+    именно этого объекта и именно этого поля.
+    """
     for item in items[:top_k]:
         meta = item["metadata"]
         if meta.get("name") != case["expect_name"]:
             continue
-        if case["expect_level"] == "object":
-            return meta.get("level") == "object"
-        return meta.get("field") == case.get("expect_field")
+        if "expect_field" in case:
+            if meta.get("field") == case["expect_field"]:
+                return True
+            continue
+        return True
+    return False
     return False
 
 
@@ -126,8 +139,8 @@ def main() -> int:
     for case in cases:
         vec_items = _vector_search(case["query"], collection, args.top_k)
         bm25_items = [
-            {"metadata": next(c["metadata"] for c in chunks if c["id"] == doc_id)}
-            for doc_id, _ in bm25.search(case["query"], args.top_k)
+            {"metadata": next(c["metadata"] for c in chunks if c["id"] == hit.doc_id)}
+            for hit in bm25.search(case["query"], args.top_k)
         ]
         v = _matches(vec_items, case, args.top_k)
         b = _matches(bm25_items, case, args.top_k)

@@ -149,6 +149,50 @@ python scripts\build_bm25.py
 python -c "from mcp_1c_rag.search_modes import search; print(search('НДС с аванса', top_k=3, mode='hybrid'))"
 ```
 
+### Chunking по процедурам
+
+Исходный чанкинг — символьные окна 1200/200. Проверка на полном индексе показала
+дефект: **32,1 % чанков длиннее лимита e5 в 512 токенов** (у метаданных — 78 %),
+то есть хвост трети текста не участвует в эмбеддинге. См.
+[Embedding model](#embedding-model) и [`data/eval/embedding_tokens.md`](data/eval/embedding_tokens.md).
+
+Решение — нарезка `.bsl` по границам процедур/функций
+([`chunking_procedures.py`](src/mcp_1c_rag/chunking_procedures.py), ADR 0007):
+
+| Свойство | Значение |
+|---|---|
+| Единица | `Процедура`/`Функция` … `КонецПроцедуры`/`КонецФункции` |
+| Префикс чанка | `// file: <path> · proc: <name>` — путь и имя процедуры в тексте |
+| Код вне процедур | отдельный чанк `kind="module"` |
+| Длинная процедура | части `part k/m` с перекрытием 150 символов |
+| Параметры | `max_chars=1000`, `overlap=150` |
+
+Смоук на 800 реальных файлах (`scripts/smoke_procedure_chunking.py`):
+
+| Метрика | Значение | Гейт |
+|---|---|---|
+| Покрытие кода | **99,6 %** | ≥ 95 % ✅ |
+| Чанков сверх 512 токенов | **0,3 %** | ≤ 1 % ✅ |
+| Токены p50 / p99 / max | 179 / 472 / 554 | — |
+
+Сборка идёт в **отдельную коллекцию** `code_proc` и отдельную базу
+`data/chroma_proc` — текущий индекс не затрагивается:
+
+```powershell
+# смоук (300 файлов)
+python scripts\build_procedure_index.py --files 300 --collection code_proc_smoke --reset
+
+# полная сборка (возобновляемая, чекпоинт в data/procedure_index_progress.json)
+$env:MCP_1C_CHROMA_DIR="data\chroma_proc"
+python scripts\build_procedure_index.py --no-lock
+
+# BM25 для новой коллекции
+python scripts\build_bm25.py --chroma-dir data\chroma_proc --id-prefix bsl_proc: --out data\bm25_code_proc
+
+# сравнение с текущим чанкингом на gold-set v2
+python scripts\eval_chunking.py
+```
+
 ## Оценка качества
 
 Основной набор — **gold-set v2: 70 запросов в естественных формулировках**
@@ -379,16 +423,24 @@ src/mcp_1c_rag/
   rerank.py         flashrank cross-encoder (опция)
   models.py         Candidate — лёгкая модель результата
   eval_metrics.py   файловые метрики (с дедупликацией)
+  router.py         маршрутизация lexical / vector / hybrid (ADR 0006)
+  chunking_procedures.py  нарезка BSL по процедурам (ADR 0007)
   indexer.py, chunking.py, embeddings.py, store.py, hybrid.py, metrics.py
 scripts/
-  build_bm25.py     сборка лексического индекса
+  build_bm25.py     сборка лексического индекса (--id-prefix для новой коллекции)
+  build_procedure_index.py  сборка коллекции code_proc (возобновляемая)
+  smoke_procedure_chunking.py  смоук нарезки: покрытие и токены
+  eval_chunking.py  сравнение code vs code_proc на gold-set v2
+  eval_router.py    точность роутера и end-to-end качество
+  check_embedding_tokens.py  проверка лимита 512 токенов
+  check_complexity.py  гейт цикломатической сложности (CI)
   make_goldset.py   генерация gold-set v1 (исторический)
   make_goldset_v2.py natural-набор: 70 запросов
   eval_pipeline.py  сравнение конфигураций
   eval_stability.py mean ± std по нескольким прогонам
   bench.py          латентность p50/p95
   diag/             исследовательские артефакты (см. scripts/diag/README.md)
-tests/              unit-тесты (bm25, rrf, rerank, metrics)
+tests/              unit-тесты (bm25, rrf, rerank, metrics, router, chunking)
 docs/               архитектура и ADR
 data/               локальные артефакты (в git только gold-set и отчёты)
 ```
@@ -410,8 +462,8 @@ data/               локальные артефакты (в git только g
 - [x] Cross-encoder reranker как опция + замеры
 - [x] Eval-контур: file-level метрики, mean ± std, ADR
 - [x] Явная маршрутизация запросов lexical / vector / hybrid (ADR 0006)
-- [ ] Gold-set 60–100 естественных запросов с доверительными интервалами
-- [ ] Chunking по процедурам/функциям + путь файла в тексте чанка
+- [x] Gold-set 60–100 естественных запросов (70 запросов, ADR 0005)
+- [x] Chunking по процедурам/функциям + путь файла в тексте чанка (ADR 0007)
 - [ ] Код-ориентированная embedding-модель и новый baseline
 - [ ] Опциональный режим RRF с весами источников и его сравнение
 
@@ -426,6 +478,9 @@ data/               локальные артефакты (в git только g
 | [docs/adr/0004-deduplicated-metrics.md](docs/adr/0004-deduplicated-metrics.md) | схлопывание повторных чанков в метриках |
 | [docs/adr/0005-goldset-v2-natural-queries.md](docs/adr/0005-goldset-v2-natural-queries.md) | natural-набор запросов и сравнение с v1 |
 | [docs/adr/0006-query-routing.md](docs/adr/0006-query-routing.md) | контракт маршрутизации: правила, метрики, управленческое значение |
+| [docs/adr/0007-procedure-chunking.md](docs/adr/0007-procedure-chunking.md) | нарезка по процедурам: гейты, параметры, управленческое значение |
+| [data/eval/procedure_chunking_smoke.md](data/eval/procedure_chunking_smoke.md) | смоук нарезки: покрытие кода и токены |
+| [data/eval/chunking_comparison.md](data/eval/chunking_comparison.md) | сравнение code vs code_proc на gold-set v2 |
 | [data/eval/router_report.md](data/eval/router_report.md) | точность роутера и end-to-end сравнение |
 | [data/eval/v2/report_pipeline.md](data/eval/v2/report_pipeline.md) | отчёт оценки на gold-set v2 |
 | [data/eval/report_pipeline.md](data/eval/report_pipeline.md) | исторический отчёт v1 |

@@ -33,6 +33,11 @@ BSL_CHUNK_OVERLAP = int(os.environ.get("MCP_1C_BSL_CHUNK_OVERLAP", "200"))
 META_CHUNK_CHARS = int(os.environ.get("MCP_1C_META_CHUNK_CHARS", "1500"))
 META_CHUNK_OVERLAP = int(os.environ.get("MCP_1C_META_CHUNK_OVERLAP", "200"))
 
+# HNSW persistence workaround (chroma#7090): a very large sync threshold keeps
+# the index out of the on-disk pickle, so a restart rebuilds it from the WAL
+# instead of failing on a corrupted segment. 0 = library default.
+HNSW_SYNC_THRESHOLD = int(os.environ.get("MCP_1C_HNSW_SYNC_THRESHOLD", "0"))
+
 # Indexing throughput (keep modest on 16 GB RAM + CPU-only)
 EMBED_BATCH_SIZE = int(os.environ.get("MCP_1C_EMBED_BATCH_SIZE", "8"))
 CHROMA_ADD_BATCH = int(os.environ.get("MCP_1C_CHROMA_ADD_BATCH", "64"))

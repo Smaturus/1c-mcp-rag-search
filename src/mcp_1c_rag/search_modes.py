@@ -109,6 +109,37 @@ def bm25_search(
     ]
 
 
+def lexical_search(
+    query: str,
+    *,
+    collection: str = "code",
+    top_k: int = 5,
+) -> list[Candidate]:
+    """Режим ``lexical``: только глобальный BM25 (grep-подобный поиск)."""
+    hits = bm25_search(query, collection=collection, top_k=top_k)
+    if not hits:
+        return []
+    coll = get_collection(collection)
+    requested = [doc_id for doc_id, _ in hits]
+    raw = coll.get(ids=requested, include=["documents", "metadatas"])
+    ids = raw.get("ids") or []
+    documents = raw.get("documents") or []
+    metadatas = raw.get("metadatas") or []
+    by_id: dict[str, tuple[str, dict]] = {}
+    for index, doc_id in enumerate(ids):
+        text = documents[index] if index < len(documents) else ""
+        meta = metadatas[index] if index < len(metadatas) else {}
+        by_id[str(doc_id)] = (text or "", dict(meta or {}))
+    candidates: list[Candidate] = []
+    for doc_id, score in hits[:top_k]:
+        text, meta = by_id.get(doc_id, ("", {}))
+        candidates.append(
+            Candidate(id=doc_id, text=text, metadata=meta, score=float(score),
+                      source_scores={"bm25": float(score)})
+        )
+    return candidates
+
+
 def _raw_query(
     collection_name: str,
     query: str,
@@ -270,12 +301,15 @@ def search(
 ) -> list[Candidate]:
     """Единая точка входа: выбрать режим и вернуть top_k кандидатов."""
     chosen = (mode or SEARCH_DEFAULT_MODE).strip().lower()
-    if chosen not in ("vector", "hybrid", "hybrid_rerank", "pearson"):
+    if chosen not in ("lexical", "vector", "hybrid", "hybrid_rerank", "pearson"):
         raise ValueError(
-            f"неизвестный режим {chosen!r}; ожидается vector|hybrid|hybrid_rerank|pearson"
+            "неизвестный режим "
+            f"{chosen!r}; ожидается lexical|vector|hybrid|hybrid_rerank|pearson"
         )
     top_k = max(1, int(top_k))
 
+    if chosen == "lexical":
+        return lexical_search(query, collection=collection, top_k=top_k)
     if chosen == "vector":
         return vector_search(query, collection=collection, top_k=top_k)[:top_k]
     if chosen == "pearson":

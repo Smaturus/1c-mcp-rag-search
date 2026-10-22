@@ -81,13 +81,42 @@ python scripts\bench.py
 
 | Tool | Назначение |
 |---|---|
-| `codesearch(query, limit=5)` | семантический поиск по `.bsl` (cosine baseline) |
-| `metadatasearch(query, limit=20)` | поиск по отчёту конфигурации (`.txt`) |
-| `search(query, top_k, mode, collection)` | единый пайплайн: `vector` / `hybrid` (RRF) / `hybrid_rerank` / `pearson` |
+| `search_1c_metadata(query, limit=10)` | **grep-подобный** лексический поиск (BM25): точные имена, обработчики, «движения», «проводки», «кто пишет в регистр», «на основании» |
+| `search_knowledge_base(query, limit=10)` | векторный поиск (e5 cosine): «как сделать», «почему не работает», инструкции, опыт |
+| `search_hybrid(query, limit=10)` | гибрид (RRF): смешанные формулировки, требования/ТЗ/Confluence; безопасный дефолт |
+| `route_query(query)` | объясняет выбор: маршрут, инструмент, причина, уверенность |
+| `codesearch(query, limit=5)` | семантический поиск по `.bsl` (исторический cosine-baseline) |
+| `metadatasearch(query, limit=20)` | поиск по отчёту конфигурации (исторический) |
+| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (RRF) / `hybrid_rerank` / `pearson` |
 | `evaluate_retrieval(query, k, …)` | метрики по одному запросу: Hit@k, Recall@k, MRR, nDCG, null-tail |
 
 Стек: **MCP Python SDK 2.x (`MCPServer`)** + **Chroma** + **`intfloat/multilingual-e5-small`**
 + собственный BM25/инвертированный индекс + **flashrank** (опция).
+
+### Маршрутизация запросов
+
+Правила выбора инструмента — не текст промпта, а код с тестами:
+[`router.py`](src/mcp_1c_rag/router.py) + [`tests/test_router.py`](tests/test_router.py).
+При сомнении выбирается `search_hybrid` (безопасный дефолт).
+
+| Признак в запросе | Маршрут | Почему |
+|---|---|---|
+| CamelCase-имена (`РеализацияТоваровУслуг`), коды (`НФ-001`), «проводки», «движения», «кто пишет в регистр», «на основании», «связанные документы» | **lexical** | точное совпадение лексики надёжнее эмбеддинга; ранжирование вместо «сырого grep» |
+| «как сделать», «почему не работает», «инструкция», «опыт», «лучшие практики» | **vector** | смысл без точных терминов |
+| требования, ТЗ, регламент, Confluence; смесь точного и смыслового | **hybrid** | нужны оба сигнала |
+| признаков нет | **hybrid** | правило «сомневаешься — hybrid» |
+
+Измерения (`scripts/eval_router.py`, отчёт [`data/eval/router_report.md`](data/eval/router_report.md)):
+
+| Метрика | Значение |
+|---|---|
+| Точность маршрута на 24 размеченных кейсах | **100 %** (24/24) |
+| End-to-end nDCG@10 на gold-set v2: routed vs fixed hybrid | 0.216 vs 0.216 |
+| Recall@10: routed vs fixed hybrid | 0.357 vs 0.371 |
+
+Вывод зафиксирован честно: маршрутизация **не ухудшает** качество, но и не даёт
+прироста на текущем наборе (63 из 70 запросов — смысловые с точным именем и по
+контракту уходят в hybrid). Поэтому дефолт остаётся `hybrid`, а правила — ADR 0006.
 
 ## Retrieval pipeline
 
@@ -380,6 +409,7 @@ data/               локальные артефакты (в git только g
 - [x] Глобальный BM25 и RRF-гибрид
 - [x] Cross-encoder reranker как опция + замеры
 - [x] Eval-контур: file-level метрики, mean ± std, ADR
+- [x] Явная маршрутизация запросов lexical / vector / hybrid (ADR 0006)
 - [ ] Gold-set 60–100 естественных запросов с доверительными интервалами
 - [ ] Chunking по процедурам/функциям + путь файла в тексте чанка
 - [ ] Код-ориентированная embedding-модель и новый baseline
@@ -395,6 +425,8 @@ data/               локальные артефакты (в git только g
 | [docs/adr/0003-file-level-evaluation.md](docs/adr/0003-file-level-evaluation.md) | почему метрики считаются по файлам |
 | [docs/adr/0004-deduplicated-metrics.md](docs/adr/0004-deduplicated-metrics.md) | схлопывание повторных чанков в метриках |
 | [docs/adr/0005-goldset-v2-natural-queries.md](docs/adr/0005-goldset-v2-natural-queries.md) | natural-набор запросов и сравнение с v1 |
+| [docs/adr/0006-query-routing.md](docs/adr/0006-query-routing.md) | контракт маршрутизации: правила, метрики, управленческое значение |
+| [data/eval/router_report.md](data/eval/router_report.md) | точность роутера и end-to-end сравнение |
 | [data/eval/v2/report_pipeline.md](data/eval/v2/report_pipeline.md) | отчёт оценки на gold-set v2 |
 | [data/eval/report_pipeline.md](data/eval/report_pipeline.md) | исторический отчёт v1 |
 | [data/eval/bench.md](data/eval/bench.md) | латентность p50/p95, размеры индексов |

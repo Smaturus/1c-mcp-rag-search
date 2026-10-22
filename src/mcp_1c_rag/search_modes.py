@@ -36,7 +36,13 @@ if TYPE_CHECKING:  # pragma: no cover - только для аннотаций
 SearchMode = Literal["vector", "hybrid", "hybrid_rerank", "pearson"]
 
 # Префикс chroma-id для каждой коллекции (задаётся индексатором).
-_ID_PREFIX = {"code": "bsl:", "metadata": "meta:"}
+_ID_PREFIX = {
+    "code": "bsl:",
+    "metadata": "meta:",
+    "meta_upp11": "metaobj:",
+    "code_proc": "bsl_proc:",
+    "code_proc": "bsl_proc:",
+}
 
 
 _bm25: Bm25Index | None = None

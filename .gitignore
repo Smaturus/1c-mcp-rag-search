@@ -76,3 +76,17 @@ Thumbs.db
 Desktop.ini
 .idea/
 .vscode/
+
+# Confidential configuration dumps and derived local artifacts (never commit)
+data/metadata_xml/
+data/lexicon/
+data/chroma_xml/
+data/bm25_meta_upp11/
+data/bm25_code_proc/
+
+data/local_notes/
+data/meta_build.log
+data/meta_build.err
+data/code_build.log
+data/code_build.err
+data/code_progress.json

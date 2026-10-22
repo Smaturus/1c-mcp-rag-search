@@ -1,15 +1,15 @@
 {
-  "routing_cases": 39,
+  "routing_cases": 68,
   "accuracy": 1.0,
   "confusion": {
     "lexical": {
-      "lexical": 13
+      "lexical": 22
     },
     "vector": {
-      "vector": 13
+      "vector": 15
     },
     "hybrid": {
-      "hybrid": 13
+      "hybrid": 31
     }
   },
   "failures": [],

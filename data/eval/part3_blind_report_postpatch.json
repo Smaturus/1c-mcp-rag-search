@@ -1,0 +1,18 @@
+{
+  "routing_cases": 20,
+  "accuracy": 1.0,
+  "confusion": {
+    "lexical": {
+      "lexical": 7
+    },
+    "vector": {
+      "vector": 6
+    },
+    "hybrid": {
+      "hybrid": 7
+    }
+  },
+  "failures": [],
+  "fixed_hybrid": {},
+  "routed": {}
+}

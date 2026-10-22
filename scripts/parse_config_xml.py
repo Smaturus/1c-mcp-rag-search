@@ -16,18 +16,16 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree as etree  # stdlib: no extra dependency
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-
-from xml.etree import ElementTree as etree  # stdlib: no extra dependency
 
 OUT_DIR = ROOT / "data" / "metadata_xml"
 LEXICON = ROOT / "data" / "lexicon" / "names.json"

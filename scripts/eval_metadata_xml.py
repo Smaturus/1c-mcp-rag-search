@@ -80,11 +80,29 @@ def _query_cases(objects: list[dict], limit: int, seed: int = 42) -> list[dict]:
 
 
 def _vector_search(query: str, collection, top_k: int) -> list[dict]:
-    raw = collection.query(query_embeddings=[embed_query(query)], n_results=top_k,
-                           include=["metadatas", "documents"])
+    raw = collection.query(
+        query_embeddings=[embed_query(query)],
+        n_results=top_k,
+        include=["metadatas", "documents"],
+    )
     metas = (raw.get("metadatas") or [[]])[0]
     docs = (raw.get("documents") or [[]])[0]
-    return [{"metadata": meta or {}, "text": doc or ""} for meta, doc in zip(metas, docs, strict=False)]
+    return [
+        {"metadata": meta or {}, "text": doc or ""}
+        for meta, doc in zip(metas, docs, strict=False)
+    ]
+
+
+def _matches(items: list[dict], case: dict, top_k: int) -> bool:
+    """Проверить, что в top-k есть нужный объект/реквизит (структурная истина)."""
+    for item in items[:top_k]:
+        meta = item["metadata"]
+        if meta.get("name") != case["expect_name"]:
+            continue
+        if case["expect_level"] == "object":
+            return meta.get("level") == "object"
+        return meta.get("field") == case.get("expect_field")
+    return False
 
 
 def main() -> int:
@@ -106,22 +124,13 @@ def main() -> int:
     by_kind: dict[str, list[int]] = {}
     failures: list[str] = []
     for case in cases:
-        def ok(items: list[dict]) -> bool:
-            for item in items[: args.top_k]:
-                meta = item["metadata"]
-                if meta.get("name") != case["expect_name"]:
-                    continue
-                if case["expect_level"] == "object":
-                    return meta.get("level") == "object"
-                return meta.get("field") == case.get("expect_field")
-            return False
-
         vec_items = _vector_search(case["query"], collection, args.top_k)
         bm25_items = [
             {"metadata": next(c["metadata"] for c in chunks if c["id"] == doc_id)}
             for doc_id, _ in bm25.search(case["query"], args.top_k)
         ]
-        v, b = ok(vec_items), ok(bm25_items)
+        v = _matches(vec_items, case, args.top_k)
+        b = _matches(bm25_items, case, args.top_k)
         hits_vec += v
         hits_bm25 += b
         bucket = by_kind.setdefault(case["kind"], [0, 0, 0])

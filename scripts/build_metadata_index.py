@@ -1,4 +1,4 @@
-"""Build the ``meta_upp11`` collection from parsed XML metadata chunks.
+"""Build the ``metadata_xml`` collection from parsed XML metadata chunks.
 
 Input: data/metadata_xml/chunks.jsonl (see scripts/parse_config_xml.py).
 Writes into a separate Chroma dir (default data/chroma_xml), so the legacy collection
@@ -42,9 +42,9 @@ EXCLUDE_KINDS = {
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Build meta_upp11 collection")
+    ap = argparse.ArgumentParser(description="Build metadata_xml collection")
     ap.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS)
-    ap.add_argument("--collection", default="meta_upp11")
+    ap.add_argument("--collection", default="metadata_xml")
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--reset", action="store_true")

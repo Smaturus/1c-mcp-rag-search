@@ -1,4 +1,4 @@
-"""Evaluate ``meta_upp11`` (XML metadata) retrieval with structural ground truth.
+"""Evaluate ``metadata_xml`` (XML metadata) retrieval with structural ground truth.
 
 The gold answers here are structural, not subjective: for an object we know its
 exact name; for an attribute we know the owning object and the field name.
@@ -27,7 +27,7 @@ from mcp_1c_rag.store import get_collection  # noqa: E402
 
 DATA = ROOT / "data" / "metadata_xml"
 REPORT = ROOT / "data" / "eval" / "metadata_xml_report.md"
-COLLECTION = "meta_upp11"
+COLLECTION = "metadata_xml"
 
 
 def _read(path: Path) -> list[dict]:

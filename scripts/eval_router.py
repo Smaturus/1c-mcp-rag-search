@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from collections import Counter, defaultdict
@@ -79,12 +80,18 @@ def _e2e(mode_resolver, rows: list[dict]) -> dict[str, float]:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Evaluate query router")
+    ap.add_argument("--routing-only", action="store_true",
+                    help="только точность маршрута, без end-to-end прогона поиска")
+    args = ap.parse_args()
+
     cases = _read_jsonl(CASES)
     rows = _read_jsonl(GOLDEN)
 
     accuracy, confusion, details = _routing_accuracy(cases)
-    routed = _e2e(lambda row: MODE_BY_ROUTE[route_query(row["query"]).route], rows)
-    fixed = _e2e(lambda _row: "hybrid", rows)
+    wrote_e2e = not args.routing_only
+    routed = _e2e(lambda row: MODE_BY_ROUTE[route_query(row["query"]).route], rows) if wrote_e2e else {}
+    fixed = _e2e(lambda _row: "hybrid", rows) if wrote_e2e else {}
 
     lines = [
         "# Оценка роутера запросов",
@@ -113,14 +120,19 @@ def main() -> int:
         "",
         "## End-to-end качество на gold-set v2 (коллекция `code`, k=10)",
         "",
-        "| Стратегия | nDCG@10 | Recall@10 |",
-        "|---|---|---|",
-        f"| fixed `hybrid` (безопасный дефолт) | {fixed['ndcg@10']:.3f} | {fixed['recall@10']:.3f} |",
-        f"| **routed** | {routed['ndcg@10']:.3f} | {routed['recall@10']:.3f} |",
-        "",
-        "Контракт маршрутизации не должен ухудшать качество относительно дефолта; "
-        "если ухудшает — дефолт остаётся `hybrid`, а правила фиксируются как эвристика.",
     ]
+    if not wrote_e2e:
+        lines += ["_Не считалось: запуск с `--routing-only`._"]
+    else:
+        lines += [
+            "| Стратегия | nDCG@10 | Recall@10 |",
+            "|---|---|---|",
+            f"| fixed `hybrid` (безопасный дефолт) | {fixed['ndcg@10']:.3f} | {fixed['recall@10']:.3f} |",
+            f"| **routed** | {routed['ndcg@10']:.3f} | {routed['recall@10']:.3f} |",
+            "",
+            "Контракт маршрутизации не должен ухудшать качество относительно дефолта; "
+            "если ухудшает — дефолт остаётся `hybrid`, а правила фиксируются как эвристика.",
+        ]
 
     REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
     REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")

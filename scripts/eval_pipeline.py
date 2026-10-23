@@ -91,6 +91,7 @@ def evaluate_config(
     *,
     k: int,
     id_to_source: dict[str, str],
+    collection: str = "code",
 ) -> tuple[AggregateMetrics, list[dict[str, Any]]]:
     """Прогнать один режим по всем запросам gold-set (с прогревом)."""
     details: list[dict[str, Any]] = []
@@ -99,10 +100,10 @@ def evaluate_config(
         # Прогрев: загрузка модели/клиента Chroma/reranker не должна попадать
         # в латентность первого запроса.
         with contextlib.suppress(Exception):
-            search(rows[0]["query"], top_k=k, mode=mode)
+            search(rows[0]["query"], top_k=k, mode=mode, collection=collection)
     for row in rows:
         started = time.perf_counter()
-        candidates = search(row["query"], top_k=k, mode=mode)
+        candidates = search(row["query"], top_k=k, mode=mode, collection=collection)
         latency_ms = (time.perf_counter() - started) * 1000.0
         sources = [id_to_source.get(c.id, "") for c in candidates]
         metrics = evaluate_query(
@@ -190,6 +191,7 @@ def main() -> int:
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--out-dir", type=Path, default=DATA_DIR / "eval")
     ap.add_argument("--modes", default=",".join(mode for mode, _ in CONFIGS))
+    ap.add_argument("--collection", default="code")
     args = ap.parse_args()
 
     rows = load_goldset(args.golden)
@@ -205,7 +207,7 @@ def main() -> int:
         started = time.time()
         print(f"[{mode}] ...", flush=True)
         metrics, items = evaluate_config(
-            rows, mode, k=args.k, id_to_source=id_to_source
+            rows, mode, k=args.k, id_to_source=id_to_source, collection=args.collection
         )
         overall[mode] = metrics
         details[mode] = items

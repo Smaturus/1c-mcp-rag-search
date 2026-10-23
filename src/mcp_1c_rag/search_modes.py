@@ -49,13 +49,13 @@ _masks: dict[str, np.ndarray] = {}
 
 
 def get_collection(name: str = "code"):
-    """Вернуть Chroma-коллекцию по имени (``code`` или ``metadata``)."""
-    from mcp_1c_rag.store import get_code_collection, get_metadata_collection
+    """Вернуть Chroma-коллекцию по имени (``code``/``metadata`` и любые новые)."""
+    from mcp_1c_rag.store import get_collection as store_get_collection
 
-    key = (name or "code").strip().lower()
-    if key in ("metadata", "meta"):
-        return get_metadata_collection()
-    return get_code_collection()
+    key = (name or "code").strip()
+    if key.lower() in ("meta", "metadata"):
+        key = "metadata"
+    return store_get_collection(key)
 
 
 def get_bm25() -> Bm25Index:

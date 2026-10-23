@@ -1,4 +1,4 @@
-﻿"""Build the English defence deck (12 slides) for the 1C MCP + RAG project.
+"""Build the English presentation deck (12 slides) for the 1C MCP + RAG project.
 
 Run:  python docs/presentation/en/build_deck_en.py
 Writes: docs/presentation/en/1c-mcp-rag-search-slides-en.pptx
@@ -275,13 +275,13 @@ def build() -> Path:
          "MCP Python SDK  ·  Chroma  ·  multilingual-e5-small  ·  BM25  ·  RRF  ·  flashrank",
          size=13, color=RGBColor(0xB9, 0xD7, 0xE6), line_spacing=1.2)
     text(slide, MARGIN, Inches(6.45), Inches(11.5), Inches(0.5),
-         "Defence · 3 November 2026 · 10 minutes + Q&A",
+         "English talk · 10 minutes + Q&A",
          size=13, color=RGBColor(0x8F, 0xB8, 0xCF), line_spacing=1.2)
     notes(slide,
           "Thirty seconds: who I am, what the artefact is. "
           "One sentence to plant the thesis - this is not only 'search works', "
           "it is measured quality plus documented decisions. "
-          "Date and duration are on screen so I keep the pace.")
+          "Duration is on screen so I keep the pace.")
 
     # ------------------------------------------------- 2. Problem / what I built
     slide = slide_frame(prs, "The problem, and what I built", 2)
@@ -714,7 +714,7 @@ def build() -> Path:
     ]:
         add_para(right, item, size=14)
     notes(slide,
-          "Nine ADRs, five honest limitations. On a defence this is a strength: it shows where "
+          "Nine ADRs, five honest limitations. As a portfolio piece this is a strength: it shows where "
           "the solution stops. The cold start and the missing incremental indexing are the two "
           "things a production user would hit first.")
     strip(slide, Inches(5.35), Inches(0.85),

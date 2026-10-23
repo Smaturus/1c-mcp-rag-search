@@ -159,7 +159,7 @@ def build() -> Path:
             color=WHITE)
     textbox(slide, M, Inches(0.76), W - 2 * M, Inches(0.35),
             "Local-first search over BSL business logic and configuration metadata  ·  "
-            "Sergey Matyukhin  ·  Defence, 3 November 2026",
+            "Sergey Matyukhin",
             size=8.8, color=RGBColor(0xCF, 0xE4, 0xEF))
 
     # Problem

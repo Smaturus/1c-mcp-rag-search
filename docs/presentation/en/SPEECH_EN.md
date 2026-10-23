@@ -1,6 +1,6 @@
-# English defence speech — MCP + RAG for 1C
+# English talk script — MCP + RAG for 1C
 
-**Talk:** 10 minutes + Q&A · **Defence date:** 3 November 2026
+**Talk:** 10 minutes + Q&A
 **Pace:** ~140 words per minute. Spoken text is ~1,340 words for the talk plus a ~160-word fallback (1,498 words in total, inside 1,300–1,500).
 **Use:** the slide time cues are targets, not a script to race. If a slide runs long, cut the sentence marked "optional" in the deck notes, never the numbers.
 

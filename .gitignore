@@ -90,3 +90,8 @@ data/meta_build.err
 data/code_build.log
 data/code_build.err
 data/code_progress.json
+
+# Local run artifacts (never commit)
+data/keep_awake*.log
+data/keep_awake*.err
+data/code_progress.json

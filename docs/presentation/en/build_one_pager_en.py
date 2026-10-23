@@ -214,13 +214,12 @@ def build() -> Path:
     )
     box_text(
         slide, M, Inches(7.58), W - 2 * M, Inches(1.48),
-        "Paired test, vector vs hybrid: Δ nDCG@10 = +0.037, bootstrap 95% CI [-0.015; +0.086], "
-        "p = 0.154 → NOT statistically significant. The default is unchanged; ADR 0009 is proposed.\n"
-        "2×2 ablation (nDCG@10, vector/hybrid): old export · symbolic 0.176/0.209; old export · "
-        "procedural not measurable (dump gone); current export · symbolic 0.165/0.205; current export · "
-        "procedural 0.339/0.301. Chunking explains the leader flip; the export effect at symbolic "
-        "chunking is −0.012/−0.004, inside run noise. Interaction cell missing, additivity assumed. "
-        "The cross-encoder stays an option only (0.117).",
+        "Paired test (v2): Δ nDCG@10 = +0.037, bootstrap 95% CI [-0.015; +0.086], p = 0.154 → "
+        "NOT significant; default unchanged, ADR 0009 proposed.\n"
+        "Independent v3 hold-out (71 code queries, 3 runs): vector 0.205 ± 0.014 vs hybrid "
+        "0.183 ± 0.005 nDCG@10; Δ +0.023, CI [-0.019; +0.061], p = 0.275 → also NOT significant.\n"
+        "Router on v3: 58/100; the main gap is lexical→hybrid. Lexical anchors: 10/10 in top-3. "
+        "Cross-encoder stays optional (0.117).",
         size=8.5,
     )
 
@@ -228,9 +227,9 @@ def build() -> Path:
     section(slide, Inches(9.18), "Engineering")
     body(slide, Inches(9.5), Inches(1.4), [
         "72 unit tests; ruff clean, mypy over 22 modules, cyclomatic-complexity gate 143 blocks / "
-        "avg 4.37 (A) in CI; Python 3.11/3.12; CI green at 7b50775.",
-        "ADR log 0001-0009 and CHANGELOG; router 68/68 on the dev set (blind 75% before patches, 20/20 "
-        "after — that set is dev now, so a new hold-out is needed).",
+        "avg 4.37 (A) in CI; Python 3.11/3.12; CI green at 64a0085 (cleaned history).",
+        "ADR log 0001-0009 and CHANGELOG; router 68/68 on the dev set, 58/100 on the independent "
+        "v3 hold-out (quoted-name lexical cases fall back to hybrid).",
         "Limitations: HNSW rebuilt on start (~60-70 s cold start, workaround for chroma#7090); single "
         "writer; no incremental indexing; gold set partly synthetic.",
     ], size=9.5)
@@ -243,7 +242,7 @@ def build() -> Path:
             size=8.4, bold=True, color=NAVY)
 
     textbox(slide, M, Inches(11.38), W - 2 * M, Inches(0.18),
-            "All numbers come from the repository evaluation reports (code_proc / gold-set v2, 4 runs).",
+            "All numbers come from the repository reports: gold-set v2 (4 runs) and independent v3 hold-out (3 runs).",
             size=7.0, color=GRAY)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

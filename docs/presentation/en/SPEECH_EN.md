@@ -1,7 +1,7 @@
 # English talk script — MCP + RAG for 1C
 
 **Talk:** 10 minutes + Q&A
-**Pace:** ~140 words per minute. Spoken text is ~1,340 words for the talk plus a ~160-word fallback (1,498 words in total, inside 1,300–1,500).
+**Pace:** ~140 words per minute. Spoken text is ~1,390 words for the talk (10 minutes) plus a ~160-word fallback used only if the demo fails.
 **Use:** the slide time cues are targets, not a script to race. If a slide runs long, cut the sentence marked "optional" in the deck notes, never the numbers.
 
 ---
@@ -20,7 +20,7 @@ The problem is a 1C configuration dump: thousands of `.bsl` modules, plus a meta
 
 `grep` finds text. It does not find meaning. And an exact handler name and a question like "how is VAT on advances calculated" need two different search strategies.
 
-Hosted search stacks mean deployment work and sending the code elsewhere. This project goes the other way.
+Hosted search stacks mean deployment work and sending the code off the machine. This project goes the other way.
 
 I built a local MCP server over stdio. Nine tools. All retrieval runs on CPU, with e5-small embeddings and Chroma. There is no external API call in the path.
 
@@ -36,7 +36,7 @@ Sixty-eight out of sixty-eight on the router regression set.
 
 And ninety-nine point seven percent Hit@3 for metadata BM25.
 
-The stack is deliberately boring. e5-small at three hundred eighty-four dimensions. Chroma with HNSW cosine. A hand-written BM25 inverted index. Reciprocal Rank Fusion with k equals sixty. An optional cross-encoder. Python, forty to sixty milliseconds per query on CPU.
+The stack is deliberately boring: e5-small at three hundred eighty-four dimensions; Chroma with HNSW cosine; a custom BM25 index; RRF with k equals sixty; an optional cross-encoder. Python, forty to sixty milliseconds per query on CPU.
 
 ## Slide 4 — 2:00–2:50 · Architecture
 
@@ -46,7 +46,7 @@ The top one is offline. I take the dump, chunk it, embed the chunks with the pas
 
 The bottom loop is the query path. The query gets the query prefix. Cosine returns the top fifty, BM25 returns its top fifty, and RRF merges the two rankings. The cross-encoder can rerank after that, but it is off by default.
 
-BM25 is a global index over every chunk. It is not a reranker over the cosine candidates. If it were, RRF would just be reordering one list twice.
+BM25 is a global index over every chunk, not a reranker over cosine candidates — otherwise RRF would reorder one list twice.
 
 ## Slide 5 — 2:50–3:45 · Corpus and chunking
 
@@ -102,19 +102,17 @@ Each run starts fresh: four runs, mean and standard deviation. Every number in t
 
 Here is the current table. Vector leads with nDCG@10 zero point three three nine, plus or minus zero point zero two three. Pearson is zero point three three seven. Hybrid is zero point three zero one. Rerank is zero point one one seven.
 
-I ran a paired comparison of vector and hybrid: delta plus zero point zero three seven, bootstrap ninety-five percent confidence interval from minus zero point zero one five to plus zero point zero eight six, p equals zero point one five four.
+I ran a paired comparison on v2: delta plus zero point zero three seven, interval minus zero point zero one five to plus zero point zero eight six, p equals zero point one five four. The interval crosses zero, so the difference is not significant; ADR zero zero zero nine stays proposed.
 
-That interval crosses zero. So the difference is not statistically significant. I did not flip the default. ADR zero zero zero nine stays proposed.
+Then an independent v3 hold-out: one hundred fresh queries. On seventy-one code queries over three runs vector is zero point two zero five, hybrid zero point one eight three; delta plus zero point zero two three, p equals zero point two seven five. Again not significant, so the default stays hybrid.
 
-The two-by-two ablation explains it. With symbolic chunking, hybrid leads: zero point two zero five against zero point one six five. With procedural chunking, vector leads: zero point three three nine against zero point three zero one. The export effect is minus zero point zero one two for vector and minus zero point zero zero four for hybrid — inside run noise. So chunking explains the flip, not the export. One cell is missing: the old dump is gone.
-
-Recall@10 went from zero point three one zero to zero point five two three, so the vector signal got stronger. The lexical signal got weaker, because procedure names and file paths repeat across chunks.
+The two-by-two ablation explains the leader move: symbolic chunking favours hybrid, procedural favours vector; the export effect is inside run noise. One cell is missing because the old dump is gone.
 
 ## Slide 11 — 7:55–8:40 · Decisions and limitations
 
-Nine decisions are written down as ADRs. RRF over weighted Pearson. Reranker optional. File-level relevance. Deduplicated metrics. Gold-set v2. Routing as tested code. Procedure chunking. XML metadata. And the corpus change, still proposed.
+Nine ADRs: RRF over Pearson, reranker optional, file-level relevance, deduplicated metrics, gold-set v2, tested routing, procedure chunking, XML metadata, and the corpus change, still proposed.
 
-HNSW is rebuilt on every start, so cold start is about sixty to seventy seconds. The gold set is partly synthetic, so the absolute numbers are modest. There is a single writer, no parallel indexing. No incremental indexing; a full rebuild takes hours. And the routing gain is inside the noise, so it is not proven.
+HNSW is rebuilt on every start, so cold start is about sixty to seventy seconds. The gold set is partly synthetic, so the absolute numbers are modest. There is a single writer, no parallel indexing. No incremental indexing; a full rebuild takes hours. On the independent v3 hold-out the router scores fifty-eight out of one hundred: quoted names fall back to hybrid.
 
 ## Slide 12 — 8:40–9:40 · What is done, and what comes next
 
@@ -122,7 +120,7 @@ To sum up.
 
 There is an MCP server with nine tools over a local index of one hundred seventy-nine thousand chunks. Retrieval is e5 cosine plus global BM25, fused with RRF, with an optional cross-encoder. The evaluation loop reports file-level metrics over four runs. And the engineering side has seventy-two tests, ruff clean, mypy over twenty-two modules, and a complexity gate at one hundred forty-three blocks, average four point three seven.
 
-Next: finish the ablation, then decide the default. Build a new hold-out for the router. Add incremental indexing. Try code-oriented embeddings and a code reranker. Label a hundred more queries by hand.
+Next: keep the default until a new independent hold-out shows a significant effect; fix the router's quoted-name gap; add incremental indexing; try code-oriented embeddings.
 
 A retrieval tool is only as good as the evidence behind it. Every decision in this project has a number, an error bar, or an ADR next to it.
 
@@ -134,10 +132,10 @@ Thank you. I am happy to take questions.
 
 I built a local MCP server and retrieval layer for a 1C configuration dump. The index holds one hundred seventy-nine thousand five hundred eighty-six chunks: BSL procedures and metadata objects.
 
-Search fuses e5-small cosine and a global BM25 index with Reciprocal Rank Fusion at k equals sixty. An optional cross-encoder hurt quality, so it is off by default.
+Search fuses e5-small cosine and global BM25 with Reciprocal Rank Fusion at k equals sixty. An optional cross-encoder hurt quality, so it is off by default.
 
-Quality is measured on seventy natural-language queries, file-level, four runs. Vector leads at nDCG@10 zero point three three nine; hybrid is zero point three zero one. The paired difference is plus zero point zero three seven, but the interval crosses zero, so the default is unchanged and the decision is still proposed.
+Quality is measured on seventy natural-language queries, file-level, four runs. Vector leads at zero point three three nine; hybrid is zero point three zero one. The paired difference plus zero point zero three seven has an interval crossing zero, so the default is unchanged; an independent hundred-query hold-out showed the same direction without significance.
 
-Nine MCP tools, a tested router, seventy-two tests, ruff clean, mypy over twenty-two modules and a complexity gate in CI. Forty to sixty milliseconds per query on CPU, and everything runs locally.
+Nine tools, fifty-eight of one hundred on the v3 router, seventy-two tests, ruff and mypy clean, complexity gate in CI. Forty to sixty milliseconds per query on CPU, and everything runs locally.
 
 The interesting part is knowing, with an error bar, when a change is real and when it is noise.

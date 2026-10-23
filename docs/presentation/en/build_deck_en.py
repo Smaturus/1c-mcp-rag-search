@@ -640,12 +640,13 @@ def build() -> Path:
     chart.category_axis.tick_labels.font.name = "Calibri"
 
     text(slide, Inches(6.6), Inches(3.3), Inches(6.2), Inches(0.3),
-         "Paired test: vector vs hybrid", size=12, bold=True, color=NAVY)
-    text(slide, Inches(6.6), Inches(3.58), Inches(6.2), Inches(0.85),
-         "Δ nDCG@10 = +0.037\n"
-         "bootstrap 95% CI [-0.015; +0.086], p = 0.154\n"
-         "Not significant: default unchanged, ADR 0009 stays proposed.",
-         size=10.8, color=INK, line_spacing=1.05)
+         "Validation: v2 and independent v3 hold-out", size=12, bold=True, color=NAVY)
+    text(slide, Inches(6.6), Inches(3.58), Inches(6.2), Inches(0.9),
+         "v2: Δ +0.037, CI [-0.015; +0.086], p = 0.154\n"
+         "v3 (71 code queries, 3 runs): vector 0.205 ± 0.014 / hybrid 0.183 ± 0.005\n"
+         "v3: Δ +0.023, CI [-0.019; +0.061], p = 0.275 — not significant\n"
+         "Both not significant: default hybrid unchanged, ADR 0009 stays proposed.",
+         size=9.6, color=INK, line_spacing=1.0)
     text(slide, Inches(6.6), Inches(4.5), Inches(6.2), Inches(0.3),
          "2×2 ablation (nDCG@10, vector / hybrid)", size=12, bold=True, color=NAVY)
     table(
@@ -676,11 +677,12 @@ def build() -> Path:
          size=10, color=GRAY)
     notes(slide,
           "Read the table top to bottom: vector 0.339, pearson 0.337, hybrid 0.301, "
-          "rerank 0.117. Paired comparison: +0.037 with a confidence interval that crosses zero "
-          "and p = 0.154, so I did not flip the default. The 2x2 ablation then explains why the "
-          "leader moved: with symbolic chunking hybrid wins, with procedural chunking vector wins, "
-          "and the export effect at symbolic chunking is inside run noise. One cell is missing "
-          "because the old dump no longer exists, so additivity is assumed.")
+          "rerank 0.117. The paired test on v2 gives +0.037 with an interval that crosses zero "
+          "(p = 0.154). I then ran an independent 100-query v3 hold-out that never touched tuning: "
+          "on 71 code queries over three runs vector is 0.205 and hybrid 0.183, delta +0.023, "
+          "p = 0.275, again not significant. So the default stays hybrid and ADR 0009 remains proposed. "
+          "The 2x2 ablation explains why the leader moved: symbolic chunking favours hybrid, procedural "
+          "chunking favours vector, and the export effect is inside run noise.")
 
     # ------------------------------------------------ 11. Decisions & limitations
     slide = slide_frame(prs, "Decisions and limitations", 11)
@@ -710,7 +712,7 @@ def build() -> Path:
         "Gold-set is partly synthetic; absolute metrics are modest",
         "A single writer; no parallel indexing",
         "No incremental indexing: a full rebuild takes hours",
-        "The routing gain is within noise; a new hold-out set is needed",
+        "v3 hold-out: router 58/100; quoted-name lexical cases fall back to hybrid",
     ]:
         add_para(right, item, size=14)
     notes(slide,

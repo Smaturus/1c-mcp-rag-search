@@ -24,8 +24,8 @@ EMBEDDING_MODEL = os.environ.get(
     "MCP_1C_EMBEDDING_MODEL", "intfloat/multilingual-e5-small"
 )
 
-COLLECTION_CODE = "code"
-COLLECTION_METADATA = "metadata"
+COLLECTION_CODE = os.environ.get("MCP_1C_CODE_COLLECTION", "code")
+COLLECTION_METADATA = os.environ.get("MCP_1C_METADATA_COLLECTION", "metadata")
 
 # Chunking defaults
 BSL_CHUNK_CHARS = int(os.environ.get("MCP_1C_BSL_CHUNK_CHARS", "1200"))

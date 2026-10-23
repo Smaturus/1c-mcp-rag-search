@@ -331,6 +331,32 @@ hybrid→vector объясняется нарезкой, а не сменой в
 6. Методика eval прошла два внешних ревью: исправлен учёт повторных чанков
    (ADR 0004, цифры 0.378 → 0.199 на v1) и собран natural-набор (ADR 0005).
 
+### Независимый hold-out v3 (100 запросов)
+
+Для честной проверки собран отдельный hold-out из 100 запросов (23 домена: 71
+отвечается по BSL-коду, 5 — по XML-метаданным, 24 — вне корпуса: платформенные
+механизмы, регламентированная отчётность, РИБ, давальческое сырьё). Набор **не
+использовался для настройки** и не должен использоваться: v2 — для разработки,
+v3 — для финальной проверки.
+
+Baseline на 71 code-запросе (3 прогона, k=10, mean ± std): `vector` nDCG@10
+**0.205 ± 0.014**, `pearson` 0.197 ± 0.007, `hybrid` 0.183 ± 0.005;
+`lexical` 0.116. Δ(vector−hybrid) = +0.023, bootstrap CI [−0.019; +0.061],
+p = 0.275 — не значимо. Роутер на всех 100 запросах:
+**58/100 (58 %)**, на 76 отвечаемых — 43/76; основная ошибка — `lexical→hybrid`
+(21 случай): правила требуют CamelCase/код, а естественные имена в кавычках
+уходят в безопасный hybrid. Это зафиксированный разрыв контракта, а не подгонка
+под hold-out. **ADR 0009 остаётся proposed, дефолт `hybrid` не меняется**:
+условия accepted на v3 не выполнены (p/CI и per-file BM25).
+
+10 лексических «якорей» (короткие точные фразы) проверяются скриптом
+[`scripts/eval_anchors.py`](scripts/eval_anchors.py) — сейчас 10/10 в top-3;
+это быстрый сигнал деградации точного поиска. Детали — отчёт
+[`data/eval/gold_set_v3_report.md`](data/eval/gold_set_v3_report.md),
+итог и решение — [`data/eval/v3_report.md`](data/eval/v3_report.md),
+набор — [`data/eval/gold_set_v3_holdout.jsonl`](data/eval/gold_set_v3_holdout.jsonl),
+якоря — [`data/eval/anchors_v3.jsonl`](data/eval/anchors_v3.jsonl).
+
 ### Исторический корпус (прежняя нарезка)
 
 На прежнем корпусе (символьные окна, 100 465 чанков кода) тот же gold-set v2 дал
@@ -587,6 +613,9 @@ scripts/
   eval_pipeline.py          сравнение конфигураций
   eval_stability.py         mean ± std по нескольким прогонам
   eval_paired.py            парный тест vector vs hybrid (bootstrap CI + t-test)
+  validate_goldset_v3.py    валидация hold-out v3 и лексических якорей
+  eval_anchors.py           регрессия точного поиска на 10 якорях
+  eval_router_v3.py         точность роутера на hold-out v3
   eval_metadata_xml.py      A/B XML-метаданных против текстового отчёта
   eval_router.py            точность роутера
   check_embedding_tokens.py проверка лимита 512 токенов
@@ -601,6 +630,12 @@ docs/presentation/en/  EN-слайды (pptx/pdf), SPEECH_EN.md, ONE_PAGER_EN.pd
 data/eval/          gold-set v2 и отчёты (в git только gold-set и отчёты)
   code_proc/        новый корпус: report_pipeline.md, report_stability.md, report_paired.md
   symbolic_ablation/  ablation-ячейка «текущая выгрузка × символьные окна»
+  gold_set_v3_holdout.jsonl  независимый hold-out v3: 100 запросов
+  anchors_v3.jsonl           10 лексических якорей (регрессия точного поиска)
+  gold_set_v3_report.md      состав hold-out v3, baseline и ограничения
+  v3_report.md               итог v3: 3 прогона, paired, роутер, решение ADR 0009
+  v3_router.md, v3_anchors.md  отчёты роутера и якорей
+  v3_code/, v3_metadata/     агрегаты и paired-отчёты по scope
   ablation_2x2.md   2×2 ablation: выгрузка × нарезка
   v2/, report_pipeline.md, router_report.md, part3_blind_report*.md, bench.md
 data/               локальные артефакты: chroma_xml/, bm25_all/, metadata_xml/, lexicon/
@@ -636,7 +671,9 @@ data/               локальные артефакты: chroma_xml/, bm25_all
 - [x] Метаданные из XML-выгрузки (ADR 0008) и двухуровневый корпус
 - [x] Парный тест `vector` vs `hybrid` и 2×2 ablation (ADR 0009; interaction-ячейка
       не измерима — старая выгрузка утрачена)
-- [ ] Независимый hold-out для подтверждения смены лидера (ADR 0009 → accepted)
+- [x] Независимый hold-out v3 собран (100 запросов) и baseline снят
+      (`data/eval/gold_set_v3_report.md`); набор не использовался для настройки
+- [ ] Подтвердить смену лидера на v3 / независимом hold-out (ADR 0009 → accepted)
 - [ ] Код-ориентированная embedding-модель и новый baseline
 - [ ] Опциональный режим RRF с весами источников и его сравнение
 - [ ] English README (`README.en.md`)
@@ -659,6 +696,10 @@ data/               локальные артефакты: chroma_xml/, bm25_all
 | [data/eval/code_proc/report_stability.md](data/eval/code_proc/report_stability.md) | устойчивость метрик, политики маршрутизации, латентность |
 | [data/eval/code_proc/report_paired.md](data/eval/code_proc/report_paired.md) | парный тест `vector` vs `hybrid`: Δ, CI, p |
 | [data/eval/ablation_2x2.md](data/eval/ablation_2x2.md) | 2×2 ablation: выгрузка × нарезка |
+| [data/eval/gold_set_v3_holdout.jsonl](data/eval/gold_set_v3_holdout.jsonl) | независимый hold-out v3: 100 запросов (не для настройки) |
+| [data/eval/anchors_v3.jsonl](data/eval/anchors_v3.jsonl) | 10 лексических якорей для регрессии точного поиска |
+| [data/eval/gold_set_v3_report.md](data/eval/gold_set_v3_report.md) | состав hold-out v3, baseline и разрыв роутера |
+| [data/eval/v3_report.md](data/eval/v3_report.md) | итог v3: 3 прогона, paired, роутер, решение ADR 0009 |
 | [data/eval/symbolic_ablation/report_pipeline.md](data/eval/symbolic_ablation/report_pipeline.md) | ablation-ячейка «текущая выгрузка × символьные окна» |
 | [data/eval/procedure_chunking_smoke.md](data/eval/procedure_chunking_smoke.md) | смоук нарезки: покрытие кода и токены |
 | [data/eval/router_report.md](data/eval/router_report.md) | точность роутера (68/68) |

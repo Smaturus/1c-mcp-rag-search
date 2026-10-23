@@ -192,9 +192,26 @@ def main() -> int:
     ap.add_argument("--out-dir", type=Path, default=DATA_DIR / "eval")
     ap.add_argument("--modes", default=",".join(mode for mode, _ in CONFIGS))
     ap.add_argument("--collection", default="code")
+    ap.add_argument(
+        "--scope",
+        default=None,
+        choices=["code", "metadata", "none"],
+        help="filter gold-set rows by optional scope field (v3 hold-out)",
+    )
+    ap.add_argument(
+        "--answerable-only",
+        action="store_true",
+        help="drop rows with answerable=false (v3 hold-out traps/out-of-scope)",
+    )
     args = ap.parse_args()
 
     rows = load_goldset(args.golden)
+    if args.scope is not None:
+        rows = [row for row in rows if row.get("scope") == args.scope]
+    if args.answerable_only:
+        rows = [row for row in rows if row.get("answerable", True)]
+    if not rows:
+        raise SystemExit("после фильтрации не осталось запросов")
     id_to_source = load_id_to_source(args.chroma_dir / "chroma.sqlite3")
     modes = [m.strip() for m in args.modes.split(",") if m.strip()]
     print(f"gold-set: {len(rows)} запросов, k={args.k}, режимы: {modes}", flush=True)

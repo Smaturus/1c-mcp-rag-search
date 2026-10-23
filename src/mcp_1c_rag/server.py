@@ -7,6 +7,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp_1c_rag import eval_retrieval as eval_mod
 from mcp_1c_rag import search as legacy_search
 from mcp_1c_rag import search_modes
+from mcp_1c_rag.config import COLLECTION_CODE, COLLECTION_METADATA
 from mcp_1c_rag.index_guard import IndexBusy
 from mcp_1c_rag.models import Candidate
 from mcp_1c_rag.router import Route
@@ -20,7 +21,8 @@ mcp = MCPServer(
         "Tools: codesearch, metadatasearch (cosine baseline), "
         "search(query, top_k, mode, collection) with modes vector | hybrid (RRF) "
         "| hybrid_rerank | pearson, and evaluate_retrieval for quality metrics "
-        "(Hit@k / MRR / nDCG / null-tail). Measured best mode: hybrid."
+        "(Hit@k / MRR / nDCG / null-tail). Measured: vector leads on the current corpus; "
+        "hybrid is strongest for exact names (ADR 0009)."
     ),
 )
 
@@ -51,7 +53,7 @@ def metadatasearch(query: str, limit: int = 20) -> str:
 def evaluate_retrieval(
     query: str,
     k: int = 5,
-    collection: str = "code",
+    collection: str = "",
     relevant_sources: str = "",
     null_pairs: int = 40,
 ) -> str:
@@ -81,7 +83,7 @@ def search(
     query: str,
     top_k: int = 5,
     mode: str = "",
-    collection: str = "code",
+    collection: str = "",
 ) -> str:
     """Unified retrieval: vector | hybrid (RRF) | hybrid_rerank | pearson (baseline).
 
@@ -126,7 +128,7 @@ _MODE_BY_ROUTE = {
 def _merged_search(query: str, mode: str, limit: int) -> str:
     """Поиск по обеим коллекциям с нормализацией скоров и объединением."""
     found: list[tuple[float, Candidate]] = []
-    for collection in ("code", "metadata"):
+    for collection in (COLLECTION_CODE, COLLECTION_METADATA):
         try:
             candidates = search_modes.search(
                 query=query, top_k=limit, mode=mode, collection=collection

@@ -22,6 +22,8 @@ import numpy as np
 
 from mcp_1c_rag.config import (
     BM25_DIR,
+    COLLECTION_CODE,
+    COLLECTION_METADATA,
     HYBRID_TOP_K,
     RERANK_CANDIDATES,
     RRF_K,
@@ -42,6 +44,8 @@ _ID_PREFIX = {
     "metadata_xml": "metaobj:",
     "code_proc": "bsl_proc:",
 }
+_ID_PREFIX.setdefault(COLLECTION_CODE, "bsl_proc:")
+_ID_PREFIX.setdefault(COLLECTION_METADATA, "metaobj:")
 
 
 _bm25: Bm25Index | None = None
@@ -93,7 +97,7 @@ def _prefix_mask(index: Bm25Index, prefix: str) -> np.ndarray:
 def bm25_search(
     query: str,
     *,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
     top_k: int = HYBRID_TOP_K,
 ) -> list[tuple[str, float]]:
     """Глобальный лексический поиск, ограниченный одной коллекцией."""
@@ -117,7 +121,7 @@ def bm25_search(
 def lexical_search(
     query: str,
     *,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
     top_k: int = 5,
 ) -> list[Candidate]:
     """Режим ``lexical``: только глобальный BM25 (grep-подобный поиск)."""
@@ -179,7 +183,7 @@ def _raw_query(
 def vector_search(
     query: str,
     *,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
     top_k: int = 5,
 ) -> list[Candidate]:
     """Режим ``vector``: только cosine (baseline)."""
@@ -201,7 +205,7 @@ def vector_search(
 def hybrid_search(
     query: str,
     *,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
     top_k: int = HYBRID_TOP_K,
     k_rrf: int = RRF_K,
 ) -> list[Candidate]:
@@ -252,7 +256,7 @@ def hybrid_search(
 def pearson_search(
     query: str,
     *,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
     top_k: int = 5,
 ) -> list[Candidate]:
     """Режим ``pearson``: прежний взвешенный гибрид (baseline для сравнения).
@@ -302,9 +306,10 @@ def search(
     *,
     top_k: int = 5,
     mode: str | None = None,
-    collection: str = "code",
+    collection: str = COLLECTION_CODE,
 ) -> list[Candidate]:
     """Единая точка входа: выбрать режим и вернуть top_k кандидатов."""
+    collection = collection or COLLECTION_CODE
     chosen = (mode or SEARCH_DEFAULT_MODE).strip().lower()
     if chosen not in ("lexical", "vector", "hybrid", "hybrid_rerank", "pearson"):
         raise ValueError(

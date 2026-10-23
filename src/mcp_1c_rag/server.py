@@ -125,10 +125,15 @@ _MODE_BY_ROUTE = {
 }
 
 
-def _merged_search(query: str, mode: str, limit: int) -> str:
-    """Поиск по обеим коллекциям с нормализацией скоров и объединением."""
+def _merged_search(
+    query: str,
+    mode: str,
+    limit: int,
+    collections: tuple[str, ...] | None = None,
+) -> str:
+    """Поиск по коллекциям с нормализацией скоров и объединением."""
     found: list[tuple[float, Candidate]] = []
-    for collection in (COLLECTION_CODE, COLLECTION_METADATA):
+    for collection in collections or (COLLECTION_CODE, COLLECTION_METADATA):
         try:
             candidates = search_modes.search(
                 query=query, top_k=limit, mode=mode, collection=collection
@@ -158,14 +163,14 @@ def search_1c_metadata(query: str, limit: int = 10) -> str:
 
     Use for exact object/procedure names (РеализацияТоваровУслуг, ПередЗаписью),
     questions about "движения", "проводки", "кто пишет в регистр", "на основании",
-    "связанные документы". Backed by the global BM25 index over both collections,
-    so it ranks matches instead of dumping raw grep lines.
+    "связанные документы". Backed by the global BM25 index over the metadata
+    collection, so it ranks matches instead of dumping raw grep lines.
 
     Args:
         query: Exact name or a question with exact terms.
         limit: Max results (default 10).
     """
-    return _merged_search(query, "lexical", max(1, int(limit)))
+    return _merged_search(query, "lexical", max(1, int(limit)), collections=(COLLECTION_METADATA,))
 
 
 @mcp.tool()

@@ -3,10 +3,10 @@
     "kind": "runs_glob",
     "description": "4 прогонов по шаблону `data/eval/code_proc/run_hybrid_*.json`",
     "files": [
-      "D:\\MCP_1С_homework\\data\\eval\\code_proc\\run_hybrid_1.json",
-      "D:\\MCP_1С_homework\\data\\eval\\code_proc\\run_hybrid_2.json",
-      "D:\\MCP_1С_homework\\data\\eval\\code_proc\\run_hybrid_3.json",
-      "D:\\MCP_1С_homework\\data\\eval\\code_proc\\run_hybrid_4.json"
+      "data/eval/code_proc/run_hybrid_1.json",
+      "data/eval/code_proc/run_hybrid_2.json",
+      "data/eval/code_proc/run_hybrid_3.json",
+      "data/eval/code_proc/run_hybrid_4.json"
     ],
     "n_runs": 4
   },

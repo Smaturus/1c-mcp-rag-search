@@ -46,6 +46,8 @@ data/proc_build.err
 
 # Intermediate eval runs (the aggregated report_pipeline.md is tracked)
 data/eval/**/run_*.json
+# v3 raw per-query reports contain real corpus source paths; keep aggregates only
+data/eval/v3_*/report_pipeline.*
 
 # HuggingFace / torch caches if placed in project
 .cache/

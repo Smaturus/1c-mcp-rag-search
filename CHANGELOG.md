@@ -3,6 +3,32 @@
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [Unreleased]
+
+### Added
+
+- **Независимый hold-out v3** (`data/eval/gold_set_v3_holdout.jsonl`): 100 запросов
+  из 23 доменов, file-level разметка с полями `scope` / `answerable` / `confidence`;
+  71 code + 5 metadata + 24 out-of-scope (платформенные механизмы, регламентированная
+  отчётность, РИБ, давальческое сырьё). Набор **не использовался для настройки**.
+- 10 лексических якорей (`data/eval/anchors_v3.jsonl`) — короткие точные фразы,
+  которые обязаны находить конкретный файл в top-3; сейчас 10/10.
+- `scripts/validate_goldset_v3.py`, `scripts/eval_anchors.py`,
+  `scripts/eval_router_v3.py`; в `eval_pipeline.py` — фильтры `--scope` и
+  `--answerable-only`; отчёты `data/eval/gold_set_v3_report.md`,
+  `data/eval/v3_report.md`, `data/eval/v3_router.md`, `data/eval/v3_anchors.md`.
+
+### Changed
+
+- Baseline на v3 (71 code-запрос, **3 прогона**): `vector` nDCG@10 **0.205 ± 0.014**,
+  `pearson` 0.197 ± 0.007, `hybrid` 0.183 ± 0.005; `lexical` 0.116.
+  Δ(vector−hybrid) = +0.0226, CI [−0.0191; +0.0614], p = 0.275 — не значимо.
+- Роутер на независимом наборе: **58/100 (58 %)**, основная ошибка
+  `lexical→hybrid` (21 случай): правила ждут CamelCase/код, а естественные имена
+  в кавычках уходят в hybrid. Разрыв контракта зафиксирован, на hold-out не тюнинговали.
+- Условия `accepted` для ADR 0009 на v3 не выполнены (p/CI и per-file BM25) →
+  ADR остаётся **proposed**, дефолт `MCP_1C_SEARCH_MODE=hybrid` не меняется.
+
 ## [0.4.0] — 2026-10-23
 
 ### Added

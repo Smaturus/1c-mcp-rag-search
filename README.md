@@ -688,7 +688,8 @@ data/               локальные артефакты: chroma_xml/, bm25_all
 | [data/eval/gold_set_v3_report.md](data/eval/gold_set_v3_report.md) | состав hold-out v3, baseline и разрыв роутера |
 | [data/eval/v3_report.md](data/eval/v3_report.md) | итог v3: 3 прогона, paired, роутер, отклонение ADR 0009 |
 | [data/eval/ablation_2x2.md](data/eval/ablation_2x2.md) | архив 2×2 ablation (недействителен после ADR 0010) |
-| [data/eval/symbolic_ablation/report_pipeline.md](data/eval/symbolic_ablation/report_pipeline.md) | ablation-ячейка «текущая выгрузка × символьные окна» |
+| [data/eval/rrf_experiments_2026-10-23.md](data/eval/rrf_experiments_2026-10-23.md) | отрицательный результат: веса RRF, query preprocessing, глубина каналов |
+| [data/eval/symbolic_ablation/report_pipeline.md](data/eval/symbolic_ablation/report_pipeline.md) | ablation-ячейка «текущая выгрузка × символьные окна» (архив) |
 | [data/eval/procedure_chunking_smoke.md](data/eval/procedure_chunking_smoke.md) | смоук нарезки: покрытие кода и токены |
 | [data/eval/router_report.md](data/eval/router_report.md) | точность роутера (68/68) |
 | [data/eval/part3_blind_report.md](data/eval/part3_blind_report.md) | blind Part-3 до правок: 75 % |

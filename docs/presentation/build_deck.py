@@ -240,7 +240,7 @@ def build() -> Path:
     for item in [
         "Свой MCP-сервер (stdio): 8 инструментов, включая маршрутизацию запросов",
         "Полностью локальный контур: e5-small + Chroma, работает на CPU",
-        "Гибридный поиск: cosine + глобальный BM25 через RRF",
+        "Гибридный поиск: cosine + BM25 через RRF; метаданные — из XML-выгрузки",
         "Измеримость: gold-set, file-level метрики, разброс по прогонам",
     ]:
         add_para(box2, item, size=15)
@@ -250,10 +250,10 @@ def build() -> Path:
     # 3. Numbers
     slide = slide_frame(prs, "Проект в цифрах", 3)
     cards = [
-        ("124 253", "чанка в индексе"),
-        ("233 515", "термов в BM25"),
-        ("0.209", "nDCG@10 у hybrid"),
-        ("71", "unit-тест, CI зелёный"),
+        ("179 586", "чанков в индексе"),
+        ("0.339", "nDCG@10 у vector"),
+        ("68/68", "кейсов маршрутизации"),
+        ("99,7 %", "BM25 Hit@3 метаданных"),
     ]
     x = MARGIN
     for value, label in cards:
@@ -268,7 +268,7 @@ def build() -> Path:
         "Интерфейс: MCP stdio (Cursor / ZCode), 4 инструмента; eval: 70 запросов, 4 конфигурации",
     ]:
         add_para(box, item, size=15)
-    notes(slide, "Ключевые числа проекта. 124 тысячи чанков — полный индекс конфигурации: 100 445 чанков кода и 23 808 метаданных.")
+    notes(slide, "Ключевые числа проекта: 179 586 чанков — 154 560 кода (процедурная нарезка) и 25 026 метаданных (XML). Лидер на новом корпусе — vector (ADR 0009).")
 
     # 4. Architecture
     slide = slide_frame(prs, "Архитектура: два контура", 4)
@@ -328,9 +328,9 @@ def build() -> Path:
     left = text(slide, MARGIN, Inches(1.75), Inches(5.9), Inches(4.8), "заголовок", size=14)
     left.text_frame.paragraphs[0].runs[0].text = ""
     for item in [
-        "124 253 чанка: code 100 445, metadata 23 808",
+        "179 586 чанков: code 154 560 (процедуры), metadata 25 026 (XML)",
         "e5-small: 384 измерения, лимит 512 токенов на чанк",
-        "Проверка: 32,1 % чанков были длиннее лимита — исправляем нарезкой по процедурам",
+        "Проверка: 32,1 % чанков были длиннее лимита — исправлено нарезкой по процедурам (ADR 0007)",
         "Префиксы e5 сохранены: passage: для документов, query: для запросов",
         "HNSW cosine; sync_threshold = 1e6 — защита от бага chroma#7090",
         "Размер базы 2.3 ГБ; старт пересобирает HNSW из WAL (~60–70 с)",
@@ -342,15 +342,15 @@ def build() -> Path:
     right = text(slide, Inches(6.9), Inches(1.75), Inches(5.9), Inches(4.8), "заголовок", size=14)
     right.text_frame.paragraphs[0].runs[0].text = ""
     for item in [
-        "Инвертированный индекс: 233 515 термов, 6.1 млн постингов",
-        "Сборка 9 с, 51 МБ на диске, читает документы прямо из sqlite",
+        "Инвертированный индекс: 219 968 термов, 6,6 млн постингов",
+        "Сборка 22 с, 58 МБ на диске, читает документы прямо из sqlite",
         "Токенизация под 1С: кириллица, цифры, коды через дефис (НФ-001)",
         "Скоринг только по постингам запроса — без полного перебора корпуса",
         "Используется как второй источник ранжирования в RRF",
     ]:
         add_para(right, item, size=14)
     notes(slide, "Два независимых индекса: семантика и лексика. BM25 собирается отдельным скриптом, "
-                 "не входит в git и пересобирается за 9 секунд.")
+                 "не входит в git и пересобирается за 22 секунды.")
 
     # 6. MCP tools
     slide = slide_frame(prs, "MCP-сервер: инструменты для агента", 6)
@@ -360,9 +360,9 @@ def build() -> Path:
             ["Инструмент", "Что делает"],
             ["search_1c_metadata(query, limit)", "grep-подобный BM25: точные имена, проводки, движения"],
             ["search_knowledge_base(query, limit)", "vector: «как сделать», «почему не работает», инструкции"],
-            ["search_hybrid(query, limit)", "RRF: смешанные вопросы и требования — безопасный дефолт"],
+            ["search_hybrid(query, limit)", "RRF: лучший для exact-имён; на новом корпусе vector впереди"],
             ["route_query(query)", "объясняет выбор: маршрут, причина, уверенность"],
-            ["search / codesearch / evaluate_retrieval", "исторические инструменты и метрики по запросу"],
+            ["search / index_stats / evaluate_retrieval", "поиск, состав индекса и метрики по запросу"],
         ],
         MARGIN,
         Inches(1.3),
@@ -375,7 +375,7 @@ def build() -> Path:
                "Подключение", size=18, bold=True, color=NAVY)
     for item in [
         "stdio-транспорт: сервер поднимается клиентом (Cursor mcp.json, ZCode mcp.servers)",
-        "Маршрутизация — код с тестами, а не текст промпта: 24 кейса, 100 % точности",
+        "Маршрутизация — код с тестами: 68 кейсов, 100 %; blind 20/20 после правок",
         "Пример: route_query(\"проводки документа РеализацияТоваровУслуг\") → search_1c_metadata",
     ]:
         add_para(box, item, size=14)
@@ -399,12 +399,12 @@ def build() -> Path:
     res = text(slide, Inches(7.0), Inches(2.3), Inches(5.8), Inches(4.2),
                "Что дало (nDCG@10)", size=18, bold=True, color=NAVY)
     for item in [
-        "vector: 0.176 ± 0.005",
-        "hybrid (RRF): 0.209 ± 0.003  →  +19 %",
-        "Латентность: ~60 мс/запрос",
-        "Разброс ±0.003 — вывод устойчив к пересборке HNSW",
+        "Прежний корпус: hybrid 0.209 (+19 % к vector)",
+        "Новый корпус: vector 0.339, hybrid 0.301",
+        "Причина: процедурные чанки ослабили BM25 (ADR 0009)",
+        "Латентность: 50–120 мс/запрос",
     ]:
-        add_para(res, item, size=15, color=GREEN if "+19" in item else INK)
+        add_para(res, item, size=15, color=INK)
     strip = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, MARGIN, Inches(4.62),
                                    W - 2 * MARGIN, Inches(1.0))
     strip.fill.solid()
@@ -426,7 +426,7 @@ def build() -> Path:
     run.font.name = "Calibri"
     run.font.color.rgb = INK
     notes(slide, "RRF — центральное решение проекта. Складываем не скоры, а позиции; поэтому не нужно подбирать веса. "
-                 "Прирост nDCG@10 почти 70 % при той же латентности.")
+                 "На прежнем корпусе прирост был +19 %, на новом лидер сменился — это зафиксировано в ADR 0009.")
 
     # 8. Reranker
     slide = slide_frame(prs, "Reranker: отрицательный результат, оставленный в отчёте", 8)
@@ -441,11 +441,11 @@ def build() -> Path:
         add_para(box, item, size=15)
     res = text(slide, Inches(7.0), Inches(1.3), Inches(5.8), Inches(4.4),
                "Результат", size=18, bold=True, color=NAVY)
-    add_para(res, "nDCG@10: 0.209 → 0.069 (−67 %)", size=15, color=RED, bullet=True)
-    add_para(res, "Латентность: ×18 медленнее hybrid", size=15, bullet=True)
+    add_para(res, "nDCG@10: 0.301 → 0.117 (−61 %)", size=15, color=RED, bullet=True)
+    add_para(res, "Латентность: ~2,4 с/запрос (×20 к vector)", size=15, bullet=True)
     add_para(res, "Гипотеза: модель обучена на веб-пассажах, а BSL — длинный повторяющийся код",
              size=14, bullet=True)
-    add_para(res, "Решение: режим оставлен опцией, дефолт — hybrid (ADR 0002)", size=14,
+    add_para(res, "Решение: режим оставлен опцией; дефолт пересматривается (ADR 0002, 0009)", size=14,
              bullet=True, color=NAVY)
     add_para(res, "Пайплайн не «крутился» под результат: проигравшая конфигурация осталась в таблице",
              size=13, bullet=True, color=GRAY)
@@ -461,7 +461,7 @@ def build() -> Path:
         "Три типа: exact (точное имя), semantic (смысл), trap (ловушка)",
         "Релевантность — на уровне файла-источника, а не отдельного чанка",
         "Метрики: Hit@1, MRR@10, nDCG@10, Recall@10",
-        "Каждый прогон — новый процесс: HNSW пересобирается, поэтому mean ± std",
+        "Каждый прогон — новый процесс: HNSW пересобирается; 4 прогона, mean ± std",
     ]:
         add_para(box, item, size=14)
     right = text(slide, Inches(7.0), Inches(1.3), Inches(5.8), Inches(4.6),
@@ -470,7 +470,7 @@ def build() -> Path:
         "Чанковые эталоны давали ложно-нулевые метрики: правильный файл «не засчитывался»",
         "Файловая релевантность устойчива к смене chunk_size",
         "Recall@k нормирован на min(|relevant|, k)",
-        "Разброс ±0.003 у hybrid — вывод воспроизводим, а не случайная удача",
+        "Разброс ±0.023 у vector — вывод воспроизводим, а не случайная удача",
     ]:
         add_para(right, item, size=14)
     notes(slide, "Методика важнее цифр: мы показываем, как посчитаны метрики и какой у них разброс. "
@@ -482,10 +482,10 @@ def build() -> Path:
         slide,
         [
             ["Конфигурация", "Hit@1", "MRR@10", "nDCG@10", "Recall@10", "мс/запрос"],
-            ["vector", "0.076 ± 0.007", "0.127 ± 0.005", "0.176 ± 0.005", "0.310 ± 0.015", "~56"],
-            ["pearson", "0.090 ± 0.007", "0.139 ± 0.002", "0.194 ± 0.006", "0.348 ± 0.026", "~99"],
-            ["hybrid (RRF)", "0.090 ± 0.007", "0.158 ± 0.003", "0.209 ± 0.003", "0.352 ± 0.007", "~63"],
-            ["hybrid_rerank", "0.014", "0.047", "0.069", "0.136", "~1100"],
+            ["vector", "0.150 ± 0.007", "0.268 ± 0.019", "0.339 ± 0.023", "0.523 ± 0.030", "~60"],
+            ["pearson", "0.179 ± 0.021", "0.270 ± 0.024", "0.337 ± 0.030", "0.511 ± 0.048", "~90"],
+            ["hybrid (RRF)", "0.129 ± 0.010", "0.240 ± 0.013", "0.301 ± 0.017", "0.482 ± 0.034", "~70"],
+            ["hybrid_rerank", "0.086", "0.102", "0.117", "0.157", "~2400"],
         ],
         MARGIN,
         Inches(1.3),
@@ -496,7 +496,7 @@ def build() -> Path:
     )
     chart_data = CategoryChartData()
     chart_data.categories = ["vector", "pearson", "hybrid", "hybrid_rerank"]
-    chart_data.add_series("nDCG@10", (0.176, 0.194, 0.209, 0.069))
+    chart_data.add_series("nDCG@10", (0.339, 0.337, 0.301, 0.117))
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         MARGIN,
@@ -519,9 +519,9 @@ def build() -> Path:
     series.format.fill.solid()
     series.format.fill.fore_color.rgb = ACCENT
     text(slide, Inches(9.0), Inches(4.0), Inches(3.8), Inches(2.8),
-         "Источник: data/eval/report_pipeline.md\n\nhybrid — дефолтный режим:\nлучший nDCG и MRR при минимальной латентности.\n\nPearson-гибрид — только baseline.",
+         "Источник: data/eval/code_proc/report_pipeline.md\n\nvector — лидер на новом корпусе.\nhybrid лучший для exact-имён\n(0.408 против 0.250 по nDCG@10).\n\nReranker ухудшает качество.",
          size=12, color=GRAY, line_spacing=1.15)
-    notes(slide, "Таблица и график. Hybrid выигрывает по nDCG, MRR и Recall; reranker проигрывает по всем метрикам.")
+    notes(slide, "Таблица и график по новому корпусу. Vector впереди; hybrid остаётся лучшим для exact-запросов; reranker проигрывает.")
 
     # 11. Decisions and limitations
     slide = slide_frame(prs, "Решения и ограничения", 11)
@@ -535,6 +535,8 @@ def build() -> Path:
         "0003: релевантность на уровне файла — устойчивые и воспроизводимые метрики",
         "0006: маршрутизация запросов — код с тестами вместо текста промпта",
         "0007: нарезка по процедурам — устранён лимит 512 токенов",
+        "0008: метаданные из XML — BM25 Hit@3 93,0 → 99,7 %",
+        "0009: смена корпуса — лидер hybrid → vector, зафиксировано",
     ]:
         add_para(box, item, size=14)
     text(slide, Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.5),
@@ -545,6 +547,7 @@ def build() -> Path:
         "HNSW не персистится на диск: старт процесса ~60–70 с (защита от chroma#7090)",
         "Gold-set частично синтетический, абсолютные метрики скромные",
         "Один писатель индекса; параллельная индексация не поддерживается",
+        "Нет инкрементальной индексации: полная пересборка — часы",
         "Reranker для кода — следующий контур (модель на коде или fine-tune)",
     ]:
         add_para(right, item, size=14)
@@ -558,19 +561,19 @@ def build() -> Path:
     box = text(slide, MARGIN, Inches(1.3), W - 2 * MARGIN, Inches(3.4),
                "Что сделано", size=18, bold=True, color=NAVY)
     for item in [
-        "MCP-сервер с 8 инструментами и локальным индексом на 124 тыс. чанков",
+        "MCP-сервер с 8 инструментами и локальным индексом на 179 тыс. чанков",
         "Гибридный retrieval: глобальный BM25 + RRF + опциональный cross-encoder",
-        "Маршрутизация запросов: контракт с тестами, 100 % на размеченных кейсах",
+        "Маршрутизация: контракт с тестами, 68 кейсов + blind 20/20",
         "Eval-контур: gold-set v2 (70 запросов), file-level метрики, mean ± std",
-        "Инженерная обвязка: 71 тест, ruff, mypy, complexity-гейт, CI, ADR, CHANGELOG",
+        "Инженерная обвязка: 72 теста, ruff, mypy, complexity-гейт, CI, ADR, CHANGELOG",
     ]:
         add_para(box, item, size=15)
     box2 = text(slide, MARGIN, Inches(4.55), W - 2 * MARGIN, Inches(1.6),
                 "Развитие", size=18, bold=True, color=NAVY)
     for item in [
-        "Сравнить chunking по процедурам с текущим на gold-set v2; решить о смене дефолта",
-        "Код-ориентированные эмбеддинги и новый baseline",
-        "Reranker, предобученный на коде; ручная разметка 100+ запросов",
+        "Ablation нарезок и веса RRF; затем смена дефолта на vector",
+        "Инкрементальная индексация и структурные инструменты (get_metadata, find_callers)",
+        "Код-ориентированные эмбеддинги; reranker на коде; ручная разметка 100+ запросов",
     ]:
         add_para(box2, item, size=15)
     text(slide, MARGIN, Inches(6.35), W - 2 * MARGIN, Inches(0.6),

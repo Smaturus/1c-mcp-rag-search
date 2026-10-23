@@ -1,0 +1,127 @@
+{
+  "k": 10,
+  "n_queries": 70,
+  "configs": [
+    {
+      "mode": "vector",
+      "description": "только cosine (baseline)"
+    },
+    {
+      "mode": "pearson",
+      "description": "взвешенный cos+BM25+Pearson (бывший MVP)"
+    },
+    {
+      "mode": "hybrid",
+      "description": "cosine + BM25 через RRF"
+    },
+    {
+      "mode": "hybrid_rerank",
+      "description": "RRF + cross-encoder reranker"
+    }
+  ],
+  "results": {
+    "vector": {
+      "hit@1": 0.05714285714285714,
+      "mrr@10": 0.10935941043083901,
+      "ndcg@10": 0.1557624324802025,
+      "recall@10": 0.2785714285714286,
+      "latency_ms": 85.82518857022349
+    },
+    "pearson": {
+      "hit@1": 0.07142857142857142,
+      "mrr@10": 0.12296485260770976,
+      "ndcg@10": 0.1766763732921973,
+      "recall@10": 0.32857142857142857,
+      "latency_ms": 140.03708285869965
+    },
+    "hybrid": {
+      "hit@1": 0.08571428571428572,
+      "mrr@10": 0.14733560090702946,
+      "ndcg@10": 0.19547880954484295,
+      "recall@10": 0.32857142857142857,
+      "latency_ms": 131.06049428544273
+    }
+  },
+  "per_type": {
+    "exact": {
+      "vector": {
+        "hit@1": 0.25,
+        "mrr@10": 0.25,
+        "ndcg@10": 0.25,
+        "recall@10": 0.25,
+        "latency_ms": 178.3
+      },
+      "pearson": {
+        "hit@1": 0.25,
+        "mrr@10": 0.28125,
+        "ndcg@10": 0.33905179677700553,
+        "recall@10": 0.5,
+        "latency_ms": 83.67500000000001
+      },
+      "hybrid": {
+        "hit@1": 0.25,
+        "mrr@10": 0.3333333333333333,
+        "ndcg@10": 0.375,
+        "recall@10": 0.5,
+        "latency_ms": 121.35
+      }
+    },
+    "semantic": {
+      "vector": {
+        "hit@1": 0.031746031746031744,
+        "mrr@10": 0.08248929201310154,
+        "ndcg@10": 0.131449711118186,
+        "recall@10": 0.25396825396825395,
+        "latency_ms": 81.42698412698412
+      },
+      "pearson": {
+        "hit@1": 0.047619047619047616,
+        "mrr@10": 0.09584278155706727,
+        "ndcg@10": 0.14926246589363618,
+        "recall@10": 0.29365079365079366,
+        "latency_ms": 142.28095238095239
+      },
+      "hybrid": {
+        "hit@1": 0.07936507936507936,
+        "mrr@10": 0.1261400856638952,
+        "ndcg@10": 0.17167284447298814,
+        "recall@10": 0.29365079365079366,
+        "latency_ms": 132.33809523809524
+      }
+    },
+    "trap": {
+      "vector": {
+        "hit@1": 0.3333333333333333,
+        "mrr@10": 0.4861111111111111,
+        "ndcg@10": 0.5406794910561527,
+        "recall@10": 0.8333333333333334,
+        "latency_ms": 54.833333333333336
+      },
+      "pearson": {
+        "hit@1": 0.3333333333333333,
+        "mrr@10": 0.48148148148148145,
+        "ndcg@10": 0.5358678640155702,
+        "recall@10": 0.8333333333333334,
+        "latency_ms": 168.1
+      },
+      "hybrid": {
+        "hit@1": 0.0,
+        "mrr@10": 0.3444444444444444,
+        "ndcg@10": 0.4560424887802512,
+        "recall@10": 0.8333333333333334,
+        "latency_ms": 117.23333333333333
+      }
+    }
+  },
+  "golden": "data\\eval\\gold_set_v2.jsonl",
+  "note": "Это один прогон (run 1 из 4). Агрегированные mean±std по 4 прогонам и парный тест — в report_stability.md/json. per_query опущен из-за размера (полный JSON 313 КБ); полный файл: .tmp/symbolic_ablation/report_pipeline.json.",
+  "run": {
+    "modes": [
+      "vector",
+      "pearson",
+      "hybrid"
+    ],
+    "chroma": "data/chroma (code, symbolic 1200/200) копия .tmp/chroma_symbolic_copy",
+    "golden": "data/eval/gold_set_v2.jsonl"
+  }
+}

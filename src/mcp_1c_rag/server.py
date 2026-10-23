@@ -214,6 +214,45 @@ def route_query(query: str) -> str:
     )
 
 
+@mcp.tool()
+def index_stats() -> str:
+    """Report which index the server is actually serving (paths, counts, model).
+
+    Useful before a demo or when results look unexpected: confirms the Chroma
+    directory, collection sizes, BM25 index and the default search mode.
+    """
+    from pathlib import Path
+
+    from mcp_1c_rag.config import (
+        BM25_DIR,
+        CHROMA_DIR,
+        EMBEDDING_MODEL,
+        SEARCH_DEFAULT_MODE,
+    )
+
+    lines = [
+        f"chroma_dir={CHROMA_DIR}",
+        f"bm25_dir={BM25_DIR}",
+        f"embedding_model={EMBEDDING_MODEL}",
+        f"default_mode={SEARCH_DEFAULT_MODE}",
+    ]
+    try:
+        from mcp_1c_rag.store import get_client
+
+        client = get_client()
+        for name in ("code_proc", "metadata_xml", "code", "metadata"):
+            try:
+                collection = client.get_collection(name)
+                lines.append(f"collection[{name}]={collection.count()}")
+            except Exception:
+                continue
+    except Exception as exc:  # noqa: BLE001
+        lines.append(f"chroma_error={type(exc).__name__}: {exc}")
+    bm25_file = Path(BM25_DIR) / "index.npz"
+    lines.append(f"bm25_index_present={bm25_file.exists()}")
+    return "\n".join(lines)
+
+
 def main() -> None:
     """Entry point for stdio transport (Cursor mcp.json)."""
     mcp.run(transport="stdio")

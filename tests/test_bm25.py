@@ -14,9 +14,29 @@ from mcp_1c_rag.bm25 import Bm25Index, BM25Okapi, docs_from_sqlite, tokenize  # 
 
 
 def test_tokenize_keeps_abbreviations_and_codes() -> None:
-    """Аббревиатуры и дефисные коды остаются целыми токенами."""
+    """Аббревиатуры и дефисные коды остаются целыми; CamelCase даёт части."""
     tokens = tokenize("НДС с аванса, НФ-001 и ОСВ; ПередЗаписью")
-    assert tokens == ["ндс", "с", "аванса", "нф-001", "и", "осв", "передзаписью"]
+    assert tokens == [
+        "ндс", "с", "аванса", "нф-001", "и", "осв", "передзаписью", "перед", "записью"
+    ]
+
+
+def test_tokenize_splits_camel_case_and_snake_case() -> None:
+    """Идентификатор раскладывается на слова, исходный токен сохраняется."""
+    tokens = tokenize("ЗаказПокупателя bsl_proc")
+    assert "заказпокупателя" in tokens
+    assert "заказ" in tokens and "покупателя" in tokens
+    assert "bsl_proc" in tokens and "bsl" in tokens and "proc" in tokens
+
+
+def test_camel_case_query_matches_identifier() -> None:
+    """Запрос «заказ покупателя» находит документ ЗаказПокупателя."""
+    index = Bm25Index.build([
+        ("bsl:1", "// file: Documents/ЗаказПокупателя/Ext/ObjectModule.bsl"),
+        ("bsl:2", "// file: Documents/РеализацияТоваровУслуг/Ext/ObjectModule.bsl"),
+    ])
+    hits = index.search("заказ покупателя", top_k=2)
+    assert hits and hits[0].doc_id == "bsl:1"
 
 
 def test_tokenize_ignores_punctuation_only() -> None:

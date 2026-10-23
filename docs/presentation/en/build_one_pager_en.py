@@ -200,34 +200,34 @@ def build() -> Path:
         slide,
         [
             ["Configuration", "nDCG@10", "Recall@10", "Hit@1", "MRR@10"],
-            ["vector", "0.339 ± 0.023", "0.523 ± 0.030", "0.150 ± 0.007", "0.268 ± 0.019"],
-            ["pearson", "0.337 ± 0.030", "0.511 ± 0.048", "0.179 ± 0.021", "0.270 ± 0.024"],
-            ["hybrid (RRF)", "0.301 ± 0.017", "0.482 ± 0.034", "0.129 ± 0.010", "0.240 ± 0.013"],
+            ["vector", "0.331 ± 0.028", "0.511 ± 0.044", "0.157 ± 0.018", "0.266 ± 0.026"],
+            ["pearson", "0.383 ± 0.040", "0.562 ± 0.053", "0.207 ± 0.038", "0.313 ± 0.039"],
+            ["hybrid (RRF)", "0.442 ± 0.012", "0.652 ± 0.024", "0.221 ± 0.008", "0.368 ± 0.010"],
+            ["lexical (BM25)", "0.426", "0.571", "0.271", "0.355"],
             ["hybrid + rerank", "0.117", "0.157", "0.086", "0.102"],
         ],
         M,
         Inches(6.34),
         W - 2 * M,
-        Inches(1.12),
+        Inches(1.45),
         col_widths=[2.5, 1.9, 1.9, 1.7, 1.7],
-        size=8.4,
+        size=8.0,
     )
     box_text(
-        slide, M, Inches(7.58), W - 2 * M, Inches(1.48),
-        "Paired test (v2): Δ nDCG@10 = +0.037, bootstrap 95% CI [-0.015; +0.086], p = 0.154 → "
-        "NOT significant; default unchanged, ADR 0009 proposed.\n"
-        "Independent v3 hold-out (71 code queries, 3 runs): vector 0.205 ± 0.014 vs hybrid "
-        "0.183 ± 0.005 nDCG@10; Δ +0.023, CI [-0.019; +0.061], p = 0.275 → also NOT significant.\n"
-        "Router on v3: 58/100; the main gap is lexical→hybrid. Lexical anchors: 10/10 in top-3. "
-        "Cross-encoder stays optional (0.117).",
-        size=8.5,
+        slide, M, Inches(7.88), W - 2 * M, Inches(1.25),
+        "Paired test (v2, 4 runs): hybrid 0.442 vs vector 0.331; Δ = −0.112, 95% CI [−0.184; −0.038], "
+        "p = 0.0037 → hybrid significantly better; default hybrid confirmed.\n"
+        "Independent v3 hold-out (71 code queries, 3 runs): hybrid 0.217 vs vector 0.208; "
+        "Δ = −0.010, p = 0.635 → not worse. ADR 0009 (leader shift) rejected; fix in ADR 0010.\n"
+        "Router v3: 58/100; main gap lexical→hybrid. Anchors: 10/10 top-3.",
+        size=8.3,
     )
 
     # Engineering
     section(slide, Inches(9.18), "Engineering")
     body(slide, Inches(9.5), Inches(1.4), [
-        "72 unit tests; ruff clean, mypy over 22 modules, cyclomatic-complexity gate 143 blocks / "
-        "avg 4.37 (A) in CI; Python 3.11/3.12; CI green at 64a0085 (cleaned history).",
+        "74 unit tests; ruff clean, mypy over 22 modules, cyclomatic-complexity gate 143 blocks / "
+        "avg 4.37 (A) in CI; Python 3.11/3.12; CI green.",
         "ADR log 0001-0009 and CHANGELOG; router 68/68 on the dev set, 58/100 on the independent "
         "v3 hold-out (quoted-name lexical cases fall back to hybrid).",
         "Limitations: HNSW rebuilt on start (~60-70 s cold start, workaround for chroma#7090); single "

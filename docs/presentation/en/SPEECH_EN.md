@@ -100,17 +100,17 @@ Each run starts fresh: four runs, mean and standard deviation. Every number in t
 
 ## Slide 10 — 6:50–7:55 · Results
 
-Here is the current table. Vector leads with nDCG@10 zero point three three nine, plus or minus zero point zero two three. Pearson is zero point three three seven. Hybrid is zero point three zero one. Rerank is zero point one one seven.
+Here is the current table after the fix. Hybrid leads with nDCG@10 zero point four four two, plus or minus zero point zero one two. Lexical is zero point four two six. Pearson is zero point three eight three. Vector is zero point three three one. Rerank is zero point one one seven.
 
-I ran a paired comparison on v2: delta plus zero point zero three seven, interval minus zero point zero one five to plus zero point zero eight six, p equals zero point one five four. The interval crosses zero, so the difference is not significant; ADR zero zero zero nine stays proposed.
+The paired test on v2: delta minus zero point one one two, interval minus zero point one eight four to minus zero point zero three eight, p equals zero point zero zero three seven. Hybrid is significantly better.
 
-Then an independent v3 hold-out: one hundred fresh queries. On seventy-one code queries over three runs vector is zero point two zero five, hybrid zero point one eight three; delta plus zero point zero two three, p equals zero point two seven five. Again not significant, so the default stays hybrid.
+The apparent leader flip was a BM25 tokenizer defect. CamelCase identifiers were not split, so a query like «заказ покупателя» never matched ЗаказПокупателя. Before the fix hybrid was zero point three zero one and lexical zero point one one six; after it they are zero point four four two and zero point four two six. ADR zero zero zero nine is rejected; the fix is ADR zero zero one zero.
 
-The two-by-two ablation explains the leader move: symbolic chunking favours hybrid, procedural favours vector; the export effect is inside run noise. One cell is missing because the old dump is gone.
+On the independent v3 hold-out, over seventy-one code queries and three runs, hybrid is zero point two one seven against vector zero point two zero eight, p equals zero point six three five. Not worse. The old two-by-two ablation is void because it used the defective tokenizer.
 
 ## Slide 11 — 7:55–8:40 · Decisions and limitations
 
-Nine ADRs: RRF over Pearson, reranker optional, file-level relevance, deduplicated metrics, gold-set v2, tested routing, procedure chunking, XML metadata, and the corpus change, still proposed.
+Ten ADRs: RRF over Pearson, reranker optional, file-level relevance, deduplicated metrics, gold-set v2, tested routing, procedure chunking, XML metadata, the rejected corpus-change claim, and the tokenizer fix.
 
 HNSW is rebuilt on every start, so cold start is about sixty to seventy seconds. The gold set is partly synthetic, so the absolute numbers are modest. There is a single writer, no parallel indexing. No incremental indexing; a full rebuild takes hours. On the independent v3 hold-out the router scores fifty-eight out of one hundred: quoted names fall back to hybrid.
 
@@ -118,9 +118,9 @@ HNSW is rebuilt on every start, so cold start is about sixty to seventy seconds.
 
 To sum up.
 
-There is an MCP server with nine tools over a local index of one hundred seventy-nine thousand chunks. Retrieval is e5 cosine plus global BM25, fused with RRF, with an optional cross-encoder. The evaluation loop reports file-level metrics over four runs. And the engineering side has seventy-two tests, ruff clean, mypy over twenty-two modules, and a complexity gate at one hundred forty-three blocks, average four point three seven.
+There is an MCP server with nine tools over a local index of one hundred seventy-nine thousand chunks. Retrieval is e5 cosine plus global BM25, fused with RRF, with an optional cross-encoder. The evaluation loop reports file-level metrics over four runs. And the engineering side has seventy-four tests, ruff clean, mypy over twenty-two modules, and a complexity gate at one hundred forty-three blocks, average four point three seven.
 
-Next: keep the default until a new independent hold-out shows a significant effect; fix the router's quoted-name gap; add incremental indexing; try code-oriented embeddings.
+Next: re-measure the symbolic and metadata cells with the fixed tokenizer; fix the router's quoted-name gap; add incremental indexing; try code-oriented embeddings.
 
 A retrieval tool is only as good as the evidence behind it. Every decision in this project has a number, an error bar, or an ADR next to it.
 
@@ -134,8 +134,8 @@ I built a local MCP server and retrieval layer for a 1C configuration dump. The 
 
 Search fuses e5-small cosine and global BM25 with Reciprocal Rank Fusion at k equals sixty. An optional cross-encoder hurt quality, so it is off by default.
 
-Quality is measured on seventy natural-language queries, file-level, four runs. Vector leads at zero point three three nine; hybrid is zero point three zero one. The paired difference plus zero point zero three seven has an interval crossing zero, so the default is unchanged; an independent hundred-query hold-out showed the same direction without significance.
+Quality is measured on seventy natural-language queries, file-level, four runs. After fixing the BM25 tokenizer, hybrid leads at zero point four four two; vector is zero point three three one. The paired difference minus zero point one one two is significant, so hybrid stays the default. An independent hundred-query hold-out showed hybrid not worse than vector.
 
-Nine tools, fifty-eight of one hundred on the v3 router, seventy-two tests, ruff and mypy clean, complexity gate in CI. Forty to sixty milliseconds per query on CPU, and everything runs locally.
+Nine tools, fifty-eight of one hundred on the v3 router, seventy-four tests, ruff and mypy clean, complexity gate in CI. Forty to sixty milliseconds per query on CPU, and everything runs locally.
 
 The interesting part is knowing, with an error bar, when a change is real and when it is noise.

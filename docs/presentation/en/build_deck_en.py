@@ -319,7 +319,7 @@ def build() -> Path:
     slide = slide_frame(prs, "The project in numbers", 3)
     cards = [
         ("179,586", "chunks in the index"),
-        ("0.339", "nDCG@10, vector (leader)"),
+        ("0.442", "nDCG@10, hybrid (leader)"),
         ("68/68", "router regression cases"),
         ("99.7 %", "metadata BM25 Hit@3"),
     ]
@@ -338,7 +338,7 @@ def build() -> Path:
         "Storage: Chroma with HNSW cosine; lexical side: a custom BM25 inverted index over all chunks",
         "Fusion: Reciprocal Rank Fusion, k = 60; optional flashrank cross-encoder, off by default",
         "Interface: MCP over stdio, 9 tools; evaluation: 70 queries x 4 configurations, 4 runs each",
-        "Engineering: Python 3.11/3.12, 72 unit tests, ruff clean, mypy on 22 modules, complexity gate 143 blocks (avg 4.37, A); 40-60 ms/query",
+        "Engineering: Python 3.11/3.12, 74 unit tests, ruff clean, mypy on 22 modules, complexity gate 143 blocks (avg 4.37, A); 40-60 ms/query",
     ]:
         add_para(box, item, size=15, space_before=9)
     notes(slide,
@@ -499,8 +499,8 @@ def build() -> Path:
     right.text_frame.paragraphs[0].runs[0].text = ""
     for item in [
         "Old corpus: hybrid 0.209, vector 0.176 - hybrid was the leader",
-        "Current corpus: vector 0.339, hybrid 0.301",
-        "A weighted Pearson variant reaches 0.337, but needs tuned weights",
+        "Current corpus after tokenizer fix: hybrid 0.442, vector 0.331",
+        "A weighted Pearson variant reaches 0.383, but needs tuned weights",
         "Latency stays at 40-60 ms per query on CPU",
     ]:
         add_para(right, item, size=14)
@@ -511,7 +511,8 @@ def build() -> Path:
     notes(slide,
           "RRF is the central past design decision. We fuse positions, not scores, so no weights "
           "are tuned. On the old corpus this gave a +19% gain over vector. On the current corpus "
-          "the order flipped - that is slide 10, and it is recorded in ADR 0009.")
+          "the apparent flip was a BM25 tokenizer defect; after the fix hybrid leads again "
+          "(0.442 vs 0.331) - that is slide 10 and ADR 0010.")
 
     # ------------------------------------------------------ 8. Reranker (negative)
     slide = slide_frame(prs, "Negative result: the cross-encoder reranker", 8)
@@ -533,7 +534,7 @@ def build() -> Path:
     right = text(slide, Inches(6.95), Inches(1.7), Inches(5.8), Inches(4.4), "x", size=14)
     right.text_frame.paragraphs[0].runs[0].text = ""
     add_para(right, "Old corpus: 0.209 → 0.069", size=14, color=RED, bullet=True)
-    add_para(right, "Current corpus: 0.117 against 0.301 for plain hybrid", size=14,
+    add_para(right, "Current corpus (old tokenizer): 0.117 against 0.301", size=14,
              color=RED, bullet=True)
     add_para(right, "Latency ~2.4 s per query on CPU", size=14, bullet=True)
     add_para(right, "Hypothesis: trained on web passages; BSL is long, repetitive, "
@@ -589,32 +590,33 @@ def build() -> Path:
         slide,
         [
             ["Configuration", "Hit@1", "MRR@10", "nDCG@10", "Recall@10"],
-            ["vector", "0.150 ± 0.007", "0.268 ± 0.019", "0.339 ± 0.023", "0.523 ± 0.030"],
-            ["pearson", "0.179 ± 0.021", "0.270 ± 0.024", "0.337 ± 0.030", "0.511 ± 0.048"],
-            ["hybrid (RRF)", "0.129 ± 0.010", "0.240 ± 0.013", "0.301 ± 0.017", "0.482 ± 0.034"],
+            ["vector", "0.157 ± 0.018", "0.266 ± 0.026", "0.331 ± 0.028", "0.511 ± 0.044"],
+            ["pearson", "0.207 ± 0.038", "0.313 ± 0.039", "0.383 ± 0.040", "0.562 ± 0.053"],
+            ["hybrid (RRF)", "0.221 ± 0.008", "0.368 ± 0.010", "0.442 ± 0.012", "0.652 ± 0.024"],
+            ["lexical (BM25)", "0.271", "0.355", "0.426", "0.571"],
             ["hybrid + rerank", "0.086", "0.102", "0.117", "0.157"],
         ],
         MARGIN,
         Inches(1.15),
         W - 2 * MARGIN,
-        Inches(2.05),
+        Inches(2.2),
         col_widths=[3.1, 2.3, 2.3, 2.4, 2.3],
-        size=12,
+        size=10.8,
     )
     chart_data = CategoryChartData()
     chart_data.categories = ["vector", "pearson", "hybrid", "hybrid_rerank"]
-    chart_data.add_series("nDCG@10", (0.339, 0.337, 0.301, 0.117))
+    chart_data.add_series("nDCG@10", (0.331, 0.383, 0.442, 0.117))
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         MARGIN,
-        Inches(3.4),
+        Inches(3.5),
         Inches(5.7),
-        Inches(2.45),
+        Inches(2.35),
         chart_data,
     ).chart
     chart.has_legend = False
     chart.has_title = True
-    chart.chart_title.text_frame.text = "nDCG@10 on the current corpus"
+    chart.chart_title.text_frame.text = "nDCG@10, current corpus (fixed BM25)"
     chart.chart_title.text_frame.paragraphs[0].runs[0].font.size = Pt(12)
     chart.chart_title.text_frame.paragraphs[0].runs[0].font.bold = True
     chart.chart_title.text_frame.paragraphs[0].runs[0].font.name = "Calibri"
@@ -631,7 +633,7 @@ def build() -> Path:
     series.format.fill.solid()
     series.format.fill.fore_color.rgb = ACCENT
     chart.value_axis.minimum_scale = 0.0
-    chart.value_axis.maximum_scale = 0.40
+    chart.value_axis.maximum_scale = 0.55
     chart.value_axis.has_major_gridlines = False
     chart.value_axis.major_unit = 0.1
     chart.value_axis.tick_labels.font.size = Pt(9)
@@ -640,49 +642,45 @@ def build() -> Path:
     chart.category_axis.tick_labels.font.name = "Calibri"
 
     text(slide, Inches(6.6), Inches(3.3), Inches(6.2), Inches(0.3),
-         "Validation: v2 and independent v3 hold-out", size=12, bold=True, color=NAVY)
+         "Validation: v2 dev and independent v3 hold-out", size=12, bold=True, color=NAVY)
     text(slide, Inches(6.6), Inches(3.58), Inches(6.2), Inches(0.9),
-         "v2: Δ +0.037, CI [-0.015; +0.086], p = 0.154\n"
-         "v3 (71 code queries, 3 runs): vector 0.205 ± 0.014 / hybrid 0.183 ± 0.005\n"
-         "v3: Δ +0.023, CI [-0.019; +0.061], p = 0.275 — not significant\n"
-         "Both not significant: default hybrid unchanged, ADR 0009 stays proposed.",
+         "v2 (4 runs): hybrid 0.442 ± 0.012 vs vector 0.331 ± 0.028\n"
+         "Δ = −0.112, CI [−0.184; −0.038], p = 0.0037 — hybrid better\n"
+         "v3 (3 runs, 71 code): hybrid 0.217 vs vector 0.208, p = 0.635\n"
+         "hybrid leads on dev, not worse on v3; default confirmed.\n"
+         "ADR 0009 rejected; fix documented in ADR 0010.",
          size=9.6, color=INK, line_spacing=1.0)
-    text(slide, Inches(6.6), Inches(4.5), Inches(6.2), Inches(0.3),
-         "2×2 ablation (nDCG@10, vector / hybrid)", size=12, bold=True, color=NAVY)
+    text(slide, Inches(6.6), Inches(4.62), Inches(6.2), Inches(0.3),
+         "Why the leader flipped: BM25 tokenizer (ADR 0010)", size=12, bold=True, color=NAVY)
     table(
         slide,
         [
-            ["2×2 nDCG@10", "vector", "hybrid"],
-            ["old export · symbolic", "0.176", "0.209"],
-            ["old export · procedural", "—", "—"],
-            ["current export · symbolic", "0.165 ± 0.013", "0.205 ± 0.007"],
-            ["current export · procedural", "0.339 ± 0.023", "0.301 ± 0.017"],
+            ["v2 nDCG@10", "before", "after"],
+            ["vector", "0.339", "0.331"],
+            ["hybrid", "0.301", "0.442"],
+            ["lexical", "0.116", "0.426"],
         ],
         Inches(6.6),
-        Inches(4.78),
+        Inches(4.9),
         Inches(6.18),
-        Inches(1.12),
+        Inches(0.95),
         col_widths=[3.1, 1.55, 1.55],
         size=9.6,
     )
-    text(slide, Inches(6.6), Inches(6.02), Inches(6.18), Inches(0.75),
-         "Chunking explains the flip: hybrid leads under symbolic chunking, vector leads under "
-         "procedural. Export effect at symbolic chunking: −0.012 / −0.004, inside run noise.",
-         size=9.7, color=INK, line_spacing=1.05)
-    text(slide, Inches(6.6), Inches(6.5), Inches(6.18), Inches(0.3),
-         "Interaction cell missing (old dump gone); additivity assumed.",
-         size=9.4, color=GRAY)
-    text(slide, MARGIN, Inches(5.95), Inches(5.8), Inches(0.35),
+    text(slide, Inches(6.6), Inches(5.95), Inches(6.18), Inches(0.8),
+         "CamelCase split: «заказ покупателя» now matches ЗаказПокупателя. "
+         "The old 2×2 ablation was measured with the defective tokenizer and is void.",
+         size=9.4, color=INK, line_spacing=1.05)
+    text(slide, MARGIN, Inches(6.05), Inches(5.8), Inches(0.35),
          "All CPU modes: 40-60 ms per query. Cross-encoder rerank: ~2.4 s.",
          size=10, color=GRAY)
     notes(slide,
-          "Read the table top to bottom: vector 0.339, pearson 0.337, hybrid 0.301, "
-          "rerank 0.117. The paired test on v2 gives +0.037 with an interval that crosses zero "
-          "(p = 0.154). I then ran an independent 100-query v3 hold-out that never touched tuning: "
-          "on 71 code queries over three runs vector is 0.205 and hybrid 0.183, delta +0.023, "
-          "p = 0.275, again not significant. So the default stays hybrid and ADR 0009 remains proposed. "
-          "The 2x2 ablation explains why the leader moved: symbolic chunking favours hybrid, procedural "
-          "chunking favours vector, and the export effect is inside run noise.")
+          "Read the table top to bottom: hybrid 0.442, lexical 0.426, pearson 0.383, vector 0.331, "
+          "rerank 0.117. The paired test gives delta minus 0.112, confidence interval from minus 0.184 "
+          "to minus 0.038, p = 0.0037: hybrid is significantly better on v2. On the independent v3 "
+          "hold-out hybrid is 0.217 against vector 0.208, p = 0.635, so not worse. The apparent leader "
+          "flip was a BM25 tokenizer defect: CamelCase identifiers were not split, so natural queries "
+          "missed them. I fixed the tokenizer, rebuilt the index, and the old 2x2 ablation is void.")
 
     # ------------------------------------------------ 11. Decisions & limitations
     slide = slide_frame(prs, "Decisions and limitations", 11)
@@ -699,9 +697,10 @@ def build() -> Path:
         "0006: routing as tested code - tool choice is explainable",
         "0007: procedure chunking - the 512-token overflow is gone",
         "0008: XML metadata - BM25 Hit@3 93.0% → 99.7%",
-        "0009: corpus change - leader moved from hybrid to vector (proposed)",
+        "0009: corpus change - leader shift rejected (tokenizer defect)",
+        "0010: CamelCase-aware BM25 - hybrid restored (0.442 vs 0.331)",
     ]:
-        add_para(left, item, size=14)
+        add_para(left, item, size=13)
     divider(slide, Inches(6.75), Inches(1.3), Inches(4.8))
     text(slide, Inches(7.05), Inches(1.15), Inches(5.4), Inches(0.5),
          "Limitations", size=18, bold=True, color=NAVY)
@@ -716,11 +715,11 @@ def build() -> Path:
     ]:
         add_para(right, item, size=14)
     notes(slide,
-          "Nine ADRs, five honest limitations. As a portfolio piece this is a strength: it shows where "
+          "Ten ADRs, five honest limitations. As a portfolio piece this is a strength: it shows where "
           "the solution stops. The cold start and the missing incremental indexing are the two "
           "things a production user would hit first.")
     strip(slide, Inches(5.35), Inches(0.85),
-          "ADR 0009 is deliberately still proposed: the default changes only after an independent sample confirms the shift.",
+          "ADR 0009 is rejected: the leader shift was a BM25 tokenizer defect. Default hybrid confirmed by ADR 0010.",
           size=13)
 
     # ------------------------------------------------------------ 12. Takeaways
@@ -734,7 +733,7 @@ def build() -> Path:
         "Retrieval: e5 cosine + global BM25 + RRF + an optional cross-encoder",
         "Router as a tested contract: 68/68 on the dev regression set",
         "Evaluation loop: gold-set v2, file-level metrics, 4 runs, mean ± std",
-        "Engineering: 72 tests, ruff + mypy (22 modules) + complexity gate (avg 4.37 A), ADR log, CI green",
+        "Engineering: 74 tests, ruff + mypy (22 modules) + complexity gate (avg 4.37 A), ADR log, CI green",
     ]:
         add_para(box, item, size=15)
     text(slide, MARGIN, Inches(4.45), W - 2 * MARGIN, Inches(0.5),
@@ -742,7 +741,7 @@ def build() -> Path:
     box2 = text(slide, MARGIN, Inches(4.9), W - 2 * MARGIN, Inches(1.6), "x", size=15)
     box2.text_frame.paragraphs[0].runs[0].text = ""
     for item in [
-        "Finish the 2x2 ablation, then decide the default mode (ADR 0009)",
+        "Re-measure metadata and symbolic ablation with the fixed tokenizer",
         "A new hold-out for the router; incremental indexing; get_metadata and find_callers",
         "Code-oriented embeddings; a code reranker; 100+ manually labelled queries",
     ]:

@@ -1,7 +1,7 @@
 {"id": "A01", "phrase": "Склады ПередЗаписью", "target_source": "Catalogs/Склады/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 46, "note": "Точный модуль справочника «Склады» и имя процедуры."}
 {"id": "A02", "phrase": "Списание товаров", "target_source": "Documents/СписаниеТоваров/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 48, "note": "Точное имя документа списания."}
 {"id": "A03", "phrase": "Перемещение товаров", "target_source": "Documents/ПеремещениеТоваров/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 50, "note": "Точное имя документа перемещения."}
-{"id": "A04", "phrase": "Комплектация номенклатуры", "target_source": "Documents/КомплектацияНоменклатуры/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 53, "note": "Точное имя документа комплектации."}
+{"id": "A04", "phrase": "КомплектацияНоменклатуры", "target_source": "Documents/КомплектацияНоменклатуры/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 53, "note": "Точное имя документа (CamelCase) — сильный лексический якорь."}
 {"id": "A05", "phrase": "ОпределитьСпецификациюПоУмолчанию", "target_source": "CommonModules/УправлениеПроизводством/Ext/Module.bsl", "top_k": 3, "golden_id": 59, "note": "Уникальное имя функции в общем модуле."}
 {"id": "A06", "phrase": "Анализ доступности товаров на складах", "target_source": "Reports/АнализДоступностиТоваровНаСкладах/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 83, "note": "Точное имя отчёта."}
 {"id": "A07", "phrase": "ПоступлениеТоваровУслуг", "target_source": "Documents/ПоступлениеТоваровУслуг/Ext/ObjectModule.bsl", "top_k": 3, "golden_id": 89, "note": "Точное имя документа поступления."}

@@ -1,0 +1,83 @@
+=== tools/list ===
+tools_count=9
+{"name": "codesearch", "args": ["query", "limit"], "first_line": "Search 1C BSL code in object/form/common modules."}
+{"name": "metadatasearch", "args": ["query", "limit"], "first_line": "Search 1C metadata objects, fields and types in the configuration report."}
+{"name": "evaluate_retrieval", "args": ["query", "k", "collection", "relevant_sources", "null_pairs"], "first_line": "Evaluate retrieval quality for one query (quality metrics)."}
+{"name": "search", "args": ["query", "top_k", "mode", "collection"], "first_line": "Unified retrieval: vector | hybrid (RRF) | hybrid_rerank | pearson (baseline)."}
+{"name": "search_1c_metadata", "args": ["query", "limit"], "first_line": "Grep-like lexical search for exact 1C names, handlers and relations."}
+{"name": "search_knowledge_base", "args": ["query", "limit"], "first_line": "Semantic (vector) search for \"how to\" and troubleshooting questions."}
+{"name": "search_hybrid", "args": ["query", "limit"], "first_line": "Hybrid search (cosine + BM25 via RRF) for mixed or requirement queries."}
+{"name": "route_query", "args": ["query"], "first_line": "Explain which search tool to use for a query, and why."}
+{"name": "index_stats", "args": [], "first_line": "Report which index the server is actually serving (paths, counts, model)."}
+tools_elapsed_s=0.0
+=== index_stats ===
+chroma_dir=<temporary copy of data/chroma_xml>
+bm25_dir=data/bm25_all
+embedding_model=intfloat/multilingual-e5-small
+default_mode=hybrid
+collection[code_proc]=154560
+collection[metadata_xml]=25026
+collection[code]=0
+bm25_index_present=True
+index_elapsed_s=69.0
+=== route_query ===
+route=hybrid
+tool=search_hybrid
+confidence=0.4
+reason=недостаточно признаков; по правилу «сомневаешься — hybrid»
+=== search_hybrid ===
+[1] source=Documents/ФормированиеЗаписейКнигиПродаж/Ext/ObjectModule.bsl chunk=20 score=0.0164 rrf=0.0164 vector_rank=1.0 bm25_rank=0.0
+// file: Documents/ФормированиеЗаписейКнигиПродаж/Ext/ObjectModule.bsl · proc: ЗаполнитьРазделАвансы
+
+Процедура ЗаполнитьРазделАвансы() Экспорт
+	
+	ТаблицаРезультатов = Авансы.Выгрузить();
+	ТаблицаРезультатов.Очистить();
+	
+	Таблица_НДСcАвансов = ЗаполнитьНДСНачисленныйДаннымиПоАвансам();
+	
+	Если Таблица_НДСcАвансов.Количество()=0 Тогда
+		// Дальнейшая обработка не требуется, не обнаружен НДС, который может быть отражен в книге.
+		Авансы.Очистить();
+		Возврат;
+	КонецЕсли;
+	
+	ЗагрузитьВТаблицуЗначений(Таблица_НДСcАвансов,ТаблицаРезультатов);
+
+	Авансы.Загрузить(ТаблицаРезультатов);
+
+КонецПроцедуры // ЗаполнитьОсновнойРаздел()
+
+---
+
+[2] source=Documents/СчетФактураВыданный/Ext/ObjectModule.bsl chunk=157 score=0.0164 rrf=0.0164 vector_rank=0.0 bm25_rank=1.0
+// file: Documents/СчетФактураВыданный/Ext/ObjectModule.bsl · proc: ДвиженияПоРегистрам
+
+Процедура ДвиженияПоРегистрам(СтруктураШапкиДокумента, ТаблицаПоДокументамОснованиям, Отказ, Заголовок)
+	
+	Если НаАванс Тогда
+		// Отражение начисления НДС с авансов для последующего отражения в книге продаж
+		//ДвиженияПоРегиструНДСПродажи(СтруктураШапкиДокумента, Отказ, Заголовок);
+		ДвиженияПоРегиструНДСНачисленный(СтруктураШапкиДокумента, Отказ, Заголовок);
+		
+		// Отражение НДС с авансов для последующего предъявления НДС к вычету при зачете аванса,
+		// отражения вычета в книге покупок
+		//ДвиженияПоРегиструНДСПокупки(СтруктураШапкиДокумента, Отказ, Заголовок);
+		ДвиженияПоРегиструНДСсАвансов(СтруктураШапкиДокумента, Отказ, Заголовок);
+		
+		// Формирование проводки по начислению НДС с авансов в бюджет
+		ДвиженияПоРегиструХозрасчетный(СтруктураШапкиДокумента, Отказ, Заголовок);
+
+	КонецЕсли;
+								  
+КонецПроцедуры // ДвиженияПоРегистрам()
+
+---
+
+[3] source=Document/АвансовыйОтчет.xml chunk=? score=0.0164 rrf=0.0164 vector_rank=1.0 bm25_rank=0.0
+Документ · АвансовыйОтчет
+Реквизиты: ВалютаДокумента, Комментарий, КурсДокумента, КратностьДокумента, Организация, ОтражатьВУправленческомУчете, ОтражатьВБухгалтерскомУчете, ОтражатьВНалоговомУчете, Подразделение, СкладОрдер, СуммаВключаетНДС, СуммаДокумента, ТипЦен, УчитыватьНДС, ФизЛицо, Ответственный, ВидПоступления, НДСВключенВСтоимость, НазначениеАванса
+ТЧ: ВыданныеАвансы, Товары, ОплатаПоставщикам, Прочее, ВозвратнаяТара
+Формы: , , 
+search_elapsed_s=9.4
+DONE

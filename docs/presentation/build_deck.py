@@ -251,7 +251,7 @@ def build() -> Path:
     slide = slide_frame(prs, "Проект в цифрах", 3)
     cards = [
         ("179 586", "чанков в индексе"),
-        ("0.339", "nDCG@10 у vector"),
+        ("0.442", "nDCG@10 у hybrid"),
         ("68/68", "кейсов маршрутизации"),
         ("99,7 %", "BM25 Hit@3 метаданных"),
     ]
@@ -268,7 +268,7 @@ def build() -> Path:
         "Интерфейс: MCP stdio (Cursor / ZCode), 9 инструментов; eval: 70 запросов, 4 конфигурации",
     ]:
         add_para(box, item, size=15)
-    notes(slide, "Ключевые числа проекта: 179 586 чанков — 154 560 кода (процедурная нарезка) и 25 026 метаданных (XML). Лидер на новом корпусе — vector (ADR 0009).")
+    notes(slide, "Ключевые числа проекта: 179 586 чанков — 154 560 кода (процедурная нарезка) и 25 026 метаданных (XML). После фикса BM25 лидер — hybrid 0.442 (ADR 0010).")
 
     # 4. Architecture
     slide = slide_frame(prs, "Архитектура: два контура", 4)
@@ -400,8 +400,8 @@ def build() -> Path:
                "Что дало (nDCG@10)", size=18, bold=True, color=NAVY)
     for item in [
         "Прежний корпус: hybrid 0.209 (+19 % к vector)",
-        "Новый корпус: vector 0.339, hybrid 0.301",
-        "Причина: процедурные чанки ослабили BM25 (ADR 0009)",
+        "Новый корпус после фикса BM25: hybrid 0.442, vector 0.331",
+        "Причина прежнего «сдвига» — CamelCase-дефект токенизатора (ADR 0010)",
         "Латентность: 50–120 мс/запрос",
     ]:
         add_para(res, item, size=15, color=INK)
@@ -426,7 +426,7 @@ def build() -> Path:
     run.font.name = "Calibri"
     run.font.color.rgb = INK
     notes(slide, "RRF — центральное решение проекта. Складываем не скоры, а позиции; поэтому не нужно подбирать веса. "
-                 "На прежнем корпусе прирост был +19 %, на новом лидер сменился — это зафиксировано в ADR 0009.")
+                 "На прежнем корпусе прирост был +19 %; «смена лидера» оказалась дефектом BM25 и отклонена (ADR 0010).")
 
     # 8. Reranker
     slide = slide_frame(prs, "Reranker: отрицательный результат, оставленный в отчёте", 8)
@@ -441,7 +441,7 @@ def build() -> Path:
         add_para(box, item, size=15)
     res = text(slide, Inches(7.0), Inches(1.3), Inches(5.8), Inches(4.4),
                "Результат", size=18, bold=True, color=NAVY)
-    add_para(res, "nDCG@10: 0.301 → 0.117 (−61 %)", size=15, color=RED, bullet=True)
+    add_para(res, "nDCG@10: 0.117 против 0.301 (замер до фикса BM25; не перезамерялся)", size=15, color=RED, bullet=True)
     add_para(res, "Латентность: ~2,4 с/запрос (×20 к vector)", size=15, bullet=True)
     add_para(res, "Гипотеза: модель обучена на веб-пассажах, а BSL — длинный повторяющийся код",
              size=14, bullet=True)
@@ -482,9 +482,10 @@ def build() -> Path:
         slide,
         [
             ["Конфигурация", "Hit@1", "MRR@10", "nDCG@10", "Recall@10", "мс/запрос"],
-            ["vector", "0.150 ± 0.007", "0.268 ± 0.019", "0.339 ± 0.023", "0.523 ± 0.030", "~60"],
-            ["pearson", "0.179 ± 0.021", "0.270 ± 0.024", "0.337 ± 0.030", "0.511 ± 0.048", "~90"],
-            ["hybrid (RRF)", "0.129 ± 0.010", "0.240 ± 0.013", "0.301 ± 0.017", "0.482 ± 0.034", "~70"],
+            ["vector", "0.157 ± 0.018", "0.266 ± 0.026", "0.331 ± 0.028", "0.511 ± 0.044", "~60"],
+            ["pearson", "0.207 ± 0.038", "0.313 ± 0.039", "0.383 ± 0.040", "0.562 ± 0.053", "~90"],
+            ["hybrid (RRF)", "0.221 ± 0.008", "0.368 ± 0.010", "0.442 ± 0.012", "0.652 ± 0.024", "~70"],
+            ["lexical (BM25)", "0.271", "0.355", "0.426", "0.571", "~20"],
             ["hybrid_rerank", "0.086", "0.102", "0.117", "0.157", "~2400"],
         ],
         MARGIN,
@@ -496,7 +497,7 @@ def build() -> Path:
     )
     chart_data = CategoryChartData()
     chart_data.categories = ["vector", "pearson", "hybrid", "hybrid_rerank"]
-    chart_data.add_series("nDCG@10", (0.339, 0.337, 0.301, 0.117))
+    chart_data.add_series("nDCG@10", (0.331, 0.383, 0.442, 0.117))
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED,
         MARGIN,
@@ -519,9 +520,9 @@ def build() -> Path:
     series.format.fill.solid()
     series.format.fill.fore_color.rgb = ACCENT
     text(slide, Inches(9.0), Inches(4.0), Inches(3.8), Inches(2.8),
-         "Источник: data/eval/code_proc/report_pipeline.md\n\nvector — лидер на новом корпусе.\nhybrid лучший для exact-имён\n(0.408 против 0.250 по nDCG@10).\n\nReranker ухудшает качество.",
+         "Источник: data/eval/code_proc/report_pipeline.md\n\nhybrid — лидер после фикса BM25.\nPaired vector−hybrid: Δ −0.112,\np = 0.0037.\n\nReranker ухудшает качество.",
          size=12, color=GRAY, line_spacing=1.15)
-    notes(slide, "Таблица и график по новому корпусу. Vector впереди; hybrid остаётся лучшим для exact-запросов; reranker проигрывает.")
+    notes(slide, "Таблица и график после фикса BM25. Hybrid впереди (0.442); paired-тест значим (p = 0.0037). Reranker проигрывает.")
 
     # 11. Decisions and limitations
     slide = slide_frame(prs, "Решения и ограничения", 11)
@@ -536,9 +537,10 @@ def build() -> Path:
         "0006: маршрутизация запросов — код с тестами вместо текста промпта",
         "0007: нарезка по процедурам — устранён лимит 512 токенов",
         "0008: метаданные из XML — BM25 Hit@3 93,0 → 99,7 %",
-        "0009: смена корпуса — лидер hybrid → vector, зафиксировано",
+        "0009: смена корпуса — отклонена: дефект BM25-токенизатора",
+        "0010: CamelCase-aware BM25 — hybrid снова лидер (0.442 против 0.331)",
     ]:
-        add_para(box, item, size=14)
+        add_para(box, item, size=13)
     text(slide, Inches(7.0), Inches(1.2), Inches(5.8), Inches(0.5),
          "Ограничения", size=18, bold=True, color=NAVY)
     right = text(slide, Inches(7.0), Inches(1.65), Inches(5.8), Inches(4.6), "x", size=14)
@@ -549,8 +551,9 @@ def build() -> Path:
         "Один писатель индекса; параллельная индексация не поддерживается",
         "Нет инкрементальной индексации: полная пересборка — часы",
         "Reranker для кода — следующий контур (модель на коде или fine-tune)",
+        "v3 hold-out: роутер 58/100; quoted-name кейсы уходят в hybrid",
     ]:
-        add_para(right, item, size=14)
+        add_para(right, item, size=13)
     notes(
         slide,
         "Открытость про ограничения — сильная сторона: видно, что мы понимаем границы решения.",
@@ -565,13 +568,13 @@ def build() -> Path:
         "Гибридный retrieval: глобальный BM25 + RRF + опциональный cross-encoder",
         "Маршрутизация: контракт с тестами, 68 кейсов + blind 20/20",
         "Eval-контур: gold-set v2 (70 запросов), file-level метрики, mean ± std",
-        "Инженерная обвязка: 72 теста, ruff, mypy, complexity-гейт, CI, ADR, CHANGELOG",
+        "Инженерная обвязка: 74 теста, ruff, mypy, complexity-гейт, CI, ADR, CHANGELOG",
     ]:
         add_para(box, item, size=15)
     box2 = text(slide, MARGIN, Inches(4.55), W - 2 * MARGIN, Inches(1.6),
                 "Развитие", size=18, bold=True, color=NAVY)
     for item in [
-        "Ablation нарезок и веса RRF; затем смена дефолта на vector",
+        "Перезамерить symbolic/metadata исправленным BM25; проверить веса RRF",
         "Инкрементальная индексация и структурные инструменты (get_metadata, find_callers)",
         "Код-ориентированные эмбеддинги; reranker на коде; ручная разметка 100+ запросов",
     ]:

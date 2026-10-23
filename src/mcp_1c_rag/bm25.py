@@ -30,10 +30,29 @@ _TOKEN = re.compile(
     re.UNICODE,
 )
 
+# Сегменты CamelCase: «ЗаказПокупателя» -> «Заказ», «Покупателя»; «НДС» целиком.
+_CAMEL_PART = re.compile(r"[A-ZА-ЯЁ]?[a-zа-яё0-9]+|[A-ZА-ЯЁ]+")
+
 
 def tokenize(text: str) -> list[str]:
-    """Токены в нижнем регистре; аббревиатуры и коды сохраняются целиком."""
-    return [t.lower() for t in _TOKEN.findall(text or "")]
+    """Токены в нижнем регистре; аббревиатуры и коды сохраняются целиком.
+
+    Дополнительно раскладывает CamelCase и snake_case на части, чтобы запрос
+    «заказ покупателя» совпадал с идентификатором ``ЗаказПокупателя``, а путь
+    ``Documents/ЗаказПокупателя/...`` — с естественной формулировкой. Исходный
+    токен сохраняется: точные имена и коды (``НФ-001``) продолжают работать.
+    """
+    out: list[str] = []
+    for token in _TOKEN.findall(text or ""):
+        lower = token.lower()
+        out.append(lower)
+        if "-" not in token:
+            parts = _CAMEL_PART.findall(token)
+            if len(parts) > 1:
+                out.extend(part.lower() for part in parts)
+        if "_" in token:
+            out.extend(part.lower() for part in token.split("_") if part)
+    return out
 
 
 class BM25Okapi:

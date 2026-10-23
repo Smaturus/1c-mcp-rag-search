@@ -3,6 +3,44 @@
 Все заметные изменения проекта. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [SemVer](https://semver.org/lang/ru/).
 
+## [0.4.0] — 2026-10-23
+
+### Added
+
+- **`scripts/eval_paired.py`** — парное сравнение режимов по per-query значениям:
+  bootstrap 95 % CI, paired t-test, Wilcoxon только справочно (33/70 ничьих,
+  отбрасывание ничьих занижает p). `--runs-glob` усредняет несколько прогонов,
+  `--report` оставляет одиночный прогон. Отчёт — `data/eval/code_proc/report_paired.md`.
+- **Ablation 2×2 «выгрузка × нарезка»** (`data/eval/ablation_2x2.md`): клетка
+  «текущий экспорт × символьная нарезка» измерена заново (4 прогона:
+  vector 0.165 ± 0.013, hybrid 0.205 ± 0.007); старая клетка — исторические
+  агрегаты (0.176 / 0.209); клетка «старый экспорт × процедурная» **не измерима**
+  (дамп утрачен). Вывод: сдвиг лидера объясняется **нарезкой** (эффект +0.174 / +0.096),
+  эффект экспорта — в пределах шума; interaction не оценён.
+- **English defence kit** (`docs/presentation/en/`): 12-слайдовый deck (PPTX/PDF),
+  речь на 10 минут (`SPEECH_EN.md`), one-pager (`ONE_PAGER_EN.pdf`),
+  fallback-скриншоты демо и RU-шпаргалка (`NOTES_RU.md`).
+
+### Changed
+
+- **Корпус пересобран:** 179 586 чанков (154 560 процедурных BSL + 25 026 XML-метаданных);
+  MCP переключён на `data/chroma_xml` + `data/bm25_all`, коллекции `code_proc` / `metadata_xml`.
+  Метрики gold-set v2 (4 прогона): `vector` **0.339 ± 0.023**, `hybrid` 0.301 ± 0.017,
+  `pearson` 0.337 ± 0.030; лидер сменился с hybrid на vector.
+- **ADR 0009 — proposed:** дефолт `MCP_1C_SEARCH_MODE=hybrid` не меняется.
+  Парный тест: Δ(vector−hybrid) = +0.037, 95 % CI [−0.015; +0.086], p = 0.158 —
+  не значимо. Отчёт — `data/eval/code_proc/report_paired.md`.
+- README, ARCHITECTURE и ADR 0009 обновлены под новый корпус и ablation.
+  English README — после защиты 03.11.
+- Инженерные метрики: **72** unit-теста, mypy **22** модуля, complexity
+  **143 блока / средняя 4.37 (A) / MI 23.0**; CI зелёный.
+
+### Fixed
+
+- Из git убраны локальные артефакты `data/bm25_all` (60 МБ), `data/pytest_tmp`
+  и `.coverage`; шаблоны добавлены в `.gitignore`.
+- README больше не описывает старый корпус (124 253 чанка, hybrid 0.209) как текущий.
+
 ## [0.3.0] — 2026-10-22
 
 - **Метаданные из XML-выгрузки** (`parse_config_xml.py`, `build_metadata_index.py`, ADR 0008): 5 911 объектов, 25 026 чанков (объект/реквизит/ТЧ/измерение/форма/команда/значение), словарь 11 850 имён. A/B на 300 кейсах: BM25 Hit@3 93,0 % → **99,7 %**. HNSW sync threshold (`MCP_1C_HNSW_SYNC_THRESHOLD`) обходит chroma#7090.

@@ -1,11 +1,11 @@
-﻿"""Render the three fallback demo screenshots from the LIVE MCP server capture.
+"""Render the three fallback demo screenshots from the LIVE MCP server capture.
 
 Run:  python docs/presentation/en/generate_screenshots.py
 Writes docs/presentation/en/screenshots/:
   01_tools_list.png, 02_search_hybrid.png, 03_index_stats.png
 
 The text below is copied verbatim from a real capture made on 2026-10-23
-against the current corpus (see screenshots/live_capture_2026-10-23.txt):
+against the current corpus (see screenshots/live_capture.txt):
   MCP_1C_CHROMA_DIR=<copy of data/chroma_xml>
   MCP_1C_BM25_DIR=data/bm25_all
   MCP_1C_CODE_COLLECTION=code_proc

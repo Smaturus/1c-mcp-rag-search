@@ -17,7 +17,7 @@
   агрегаты (0.176 / 0.209); клетка «старый экспорт × процедурная» **не измерима**
   (дамп утрачен). Вывод: сдвиг лидера объясняется **нарезкой** (эффект +0.174 / +0.096),
   эффект экспорта — в пределах шума; interaction не оценён.
-- **English defence kit** (`docs/presentation/en/`): 12-слайдовый deck (PPTX/PDF),
+- **English presentation kit** (`docs/presentation/en/`): 12-слайдовый deck (PPTX/PDF),
   речь на 10 минут (`SPEECH_EN.md`), one-pager (`ONE_PAGER_EN.pdf`),
   fallback-скриншоты демо и RU-шпаргалка (`NOTES_RU.md`).
 
@@ -31,7 +31,7 @@
   Парный тест: Δ(vector−hybrid) = +0.037, 95 % CI [−0.015; +0.086], p = 0.158 —
   не значимо. Отчёт — `data/eval/code_proc/report_paired.md`.
 - README, ARCHITECTURE и ADR 0009 обновлены под новый корпус и ablation.
-  English README — после защиты 03.11.
+  English README — отдельным шагом.
 - Инженерные метрики: **72** unit-теста, mypy **22** модуля, complexity
   **143 блока / средняя 4.37 (A) / MI 23.0**; CI зелёный.
 

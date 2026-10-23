@@ -639,7 +639,7 @@ data/               локальные артефакты: chroma_xml/, bm25_all
 - [ ] Независимый hold-out для подтверждения смены лидера (ADR 0009 → accepted)
 - [ ] Код-ориентированная embedding-модель и новый baseline
 - [ ] Опциональный режим RRF с весами источников и его сравнение
-- [ ] English README (`README.en.md`) — после англоязычной защиты 03.11
+- [ ] English README (`README.en.md`)
 
 ## Документация
 
@@ -670,14 +670,11 @@ data/               локальные артефакты: chroma_xml/, bm25_all
 | [data/eval/report_pipeline.md](data/eval/report_pipeline.md) | исторический отчёт v1 |
 | [data/eval/bench.md](data/eval/bench.md) | исторические замеры латентности p50/p95 |
 | [docs/presentation/1c-mcp-rag-search-slides.pptx](docs/presentation/1c-mcp-rag-search-slides.pptx) | русская презентация проекта (12 слайдов) |
-| [docs/presentation/en/1c-mcp-rag-search-slides-en.pptx](docs/presentation/en/1c-mcp-rag-search-slides-en.pptx) | English-слайды к защите 03.11 |
+| [docs/presentation/en/1c-mcp-rag-search-slides-en.pptx](docs/presentation/en/1c-mcp-rag-search-slides-en.pptx) | English-версия слайдов |
 | [docs/presentation/en/1c-mcp-rag-search-slides-en.pdf](docs/presentation/en/1c-mcp-rag-search-slides-en.pdf) | English-слайды (PDF) |
 | [docs/presentation/en/SPEECH_EN.md](docs/presentation/en/SPEECH_EN.md) | текст выступления на английском |
 | [docs/presentation/en/ONE_PAGER_EN.pdf](docs/presentation/en/ONE_PAGER_EN.pdf) | one-pager на английском |
 | [CHANGELOG.md](CHANGELOG.md) | история изменений |
-
-Английский README (`README.en.md`) появится после защиты 03.11; до тех пор
-англоязычные материалы — только презентация и one-pager.
 
 ## Лицензия
 

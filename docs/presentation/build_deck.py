@@ -265,7 +265,7 @@ def build() -> Path:
         "Эмбеддинги: intfloat/multilingual-e5-small (384d, префиксы query: / passage:)",
         "Хранение: Chroma 1.5.9, HNSW cosine; лексика: собственный инвертированный индекс",
         "Гибрид: Reciprocal Rank Fusion (k = 60); reranker: flashrank + ms-marco-MultiBERT-L-12",
-        "Интерфейс: MCP stdio (Cursor / ZCode), 4 инструмента; eval: 70 запросов, 4 конфигурации",
+        "Интерфейс: MCP stdio (Cursor / ZCode), 8 инструментов; eval: 70 запросов, 4 конфигурации",
     ]:
         add_para(box, item, size=15)
     notes(slide, "Ключевые числа проекта: 179 586 чанков — 154 560 кода (процедурная нарезка) и 25 026 метаданных (XML). Лидер на новом корпусе — vector (ADR 0009).")

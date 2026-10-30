@@ -1,9 +1,7 @@
 # 1C MCP RAG Search
-[![M8ven Score](https://m8ven.ai/badge/mcp/smaturus/1c-mcp-rag-search?variant=verified)](https://m8ven.ai/mcp/smaturus/1c-mcp-rag-search)
+[![M8ven Score](https://m8ven.ai/badge/mcp/smaturus-1c-mcp-rag-search-1loj34?v=843b594fde481694c14ac1fea53fbe95)](https://m8ven.ai/mcp/smaturus-1c-mcp-rag-search-1loj34?s=readme)
 [![CI](https://github.com/Smaturus/1c-mcp-rag-search/actions/workflows/ci.yml/badge.svg)](https://github.com/Smaturus/1c-mcp-rag-search/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/Smaturus/1c-mcp-rag-search)](https://github.com/Smaturus/1c-mcp-rag-search/releases/latest)
-![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![MCP](https://img.shields.io/badge/protocol-MCP%20stdio-purple)
 
 Поисковый слой для выгрузки 1С, доступный LLM-агенту через **MCP**: находит нужную

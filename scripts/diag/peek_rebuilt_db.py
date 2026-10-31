@@ -1,9 +1,13 @@
 import sqlite3
 import sys
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-db = sqlite3.connect(r"D:\MCP_1С_homework\data\chroma_rebuilt\chroma.sqlite3")
+PROJECT = Path(__file__).resolve().parents[2]
+DB = PROJECT / "data" / "chroma_rebuilt" / "chroma.sqlite3"
+
+db = sqlite3.connect(DB)
 print("segments:")
 for r in db.execute("SELECT id, type, scope, collection FROM segments"):
     print(tuple(r))

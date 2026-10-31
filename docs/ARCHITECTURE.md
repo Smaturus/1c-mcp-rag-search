@@ -1,16 +1,16 @@
 # Архитектура
 
 Документ описывает устройство проекта на уровне компонентов и потоков данных.
-Ключевые компромиссы зафиксированы в [ADR](docs/adr/), результаты замеров —
-в [data/eval/code_proc/report_stability.md](data/eval/code_proc/report_stability.md),
-[data/eval/code_proc/report_paired.md](data/eval/code_proc/report_paired.md) и
-[data/eval/bench.md](data/eval/bench.md).
+Ключевые компромиссы зафиксированы в [ADR](adr/), актуальные метрики — в
+[EVALUATION.md](EVALUATION.md), отчёты замеров — в
+[data/eval/README.md](../data/eval/README.md).
 
 ## 1. Цели и не-цели
 
 **Цели**
 
-- MCP-сервер (stdio), который отдаёт агенту поиск по выгрузке 1С: BSL-код и отчёт конфигурации.
+- MCP-сервер (stdio), который отдаёт агенту поиск по выгрузке 1С: BSL-код и
+  XML-метаданные конфигурации.
 - Полностью локальный RAG-контур без внешних API.
 - Воспроизводимый замер качества: метрики, gold-set, сравнение конфигураций.
 - Код и архитектура как портфолио: тесты, линтеры, CI, документация решений.
@@ -19,7 +19,7 @@
 
 - Публикация выгрузки 1С и чужого векторного индекса.
 - Обучение собственной embedding-модели, fine-tune, GPU-инфраструктура.
-- Продакшен- SLA: проект учебный, но инженерно дисциплинированный.
+- Продакшен-SLA: проект учебный, но инженерно дисциплинированный.
 
 ## 2. Компоненты
 
@@ -56,7 +56,7 @@ flowchart TB
         EP --> M[eval_metrics.py<br/>file-level Hit/MRR/nDCG/Recall]
         M --> REP[report_pipeline.md/json]
         REP --> PAIRED[scripts/eval_paired.py<br/>парный тест + bootstrap CI]
-        BEN[scripts/bench.py] --> BL[bench.md]
+        BEN[scripts/bench.py] --> BL[report_stability.md]
     end
 
     OUT --> T1
@@ -98,48 +98,47 @@ BM25 (`data/bm25_all`, npz + json; 179 586 чанков, 236 320 термов, ~
 
 **Запрос (`hybrid_rerank`):** к шагам 1–4 добавляется cross-encoder над 20 кандидатами.
 
-**Eval:** gold-set v2 → 3–4 конфигурации → построчный расчёт метрик → агрегаты →
-markdown/JSON отчёт; парный тест `eval_paired.py` (bootstrap CI + paired t-test) по
-per-query значениям. Релевантность — на уровне файла-источника.
+**Eval:** gold-set v2 → конфигурации → построчный расчёт метрик → агрегаты →
+markdown/JSON отчёт; парный тест `eval_paired.py` (bootstrap CI + paired t-test)
+по per-query значениям. Релевантность — на уровне файла-источника.
 
 ## 4. Хранение
 
 | Каталог | Что | В git |
 |---|---|---|
 | `data/chroma_xml/` | Chroma текущего корпуса: `code_proc` (154 560) + `metadata_xml` (25 026) | нет |
-| `data/chroma/` | Chroma для ablation-ячейки: символьная нарезка (100 445) + исторические `metadata` | нет |
+| `data/chroma/` | Chroma для ablation-ячейки: символьная нарезка + исторические `metadata` | нет |
 | `data/bm25_all/` | `index.npz` + `meta.json` (глобальный BM25, 179 586 чанков) | нет |
-| `data/eval/` | gold-set, отчёты eval/bench/paired/ablation | только gold-set и отчёты |
-| `vacancies/`, `cover_letters/`, `resume_profile.md` | личные данные | нет |
+| `data/eval/` | gold-set, отчёты eval/bench/paired/ablation | только наборы и отчёты |
 
 ## 5. Производительность
 
-Замеры — `scripts/bench.py` → [data/eval/bench.md](data/eval/bench.md).
+Замеры — `scripts/bench.py` и
+[`data/eval/code_proc/report_stability.md`](../data/eval/code_proc/report_stability.md).
 Порядок величин на CPU: `vector` и `hybrid` — десятки миллисекунд,
 `hybrid_rerank` — секунды (ONNX cross-encoder). BM25-индекс по 179 тыс. чанков
-занимает ~58 МБ на диске; это отдельный шаг сборки (`scripts/build_bm25.py`).
+занимает ~81 МБ на диске; это отдельный шаг сборки (`scripts/build_bm25.py`).
 
 ## 6. Ограничения и риски
 
 1. **HNSW не персистится на диск** при `hnsw:sync_threshold=1000000` — это
    осознанная защита от [chroma#7090](https://github.com/chroma-core/chroma/issues/7090);
    векторы лежат в sqlite/WAL, HNSW пересобирается при старте процесса (~60–70 с).
-2. **Reranker обучен на веб-пассажах**, а не на BSL-коде: по замерам ухудшает
-   метрики, поэтому включён опционально.
+2. **Reranker обучен на веб-пассажах**, а не на BSL-коде: ухудшает метрики,
+   поэтому включён опционально (ADR 0002).
 3. **Gold-set частично синтетический**: авто-часть выведена из реальных файлов,
    поэтому абсолютные метрики скромные; сравнение конфигураций корректно.
 4. **Один писатель**: индексатор держит lock; параллельная индексация не поддерживается.
-5. **Старая выгрузка недоступна**: для ablation «выгрузка × нарезка» сохранились
-   только производные индексы/метрики старого корпуса; старые клетки сняты
-   дефектным BM25 и требуют перезамера (см. `data/eval/ablation_2x2.md`,
-   ADR 0009/0010).
-6. **Токенизатор BM25**: CamelCase-дефект исправлен (ADR 0010); hybrid снова
-   впереди на v2 (0.442 против 0.331, p = 0.0037) и не хуже на v3
-   (0.217 против 0.208, p = 0.635). ADR 0009 отклонён, дефолт `hybrid` подтверждён.
+5. **Старая выгрузка недоступна**: клетку 2×2 «старая выгрузка × процедурная
+   нарезка» измерить нельзя; остальные клетки сняты до ADR 0010 и требуют
+   перезамера — см. [HISTORY.md](HISTORY.md) и
+   [`data/eval/ablation_2x2.md`](../data/eval/ablation_2x2.md).
+6. **Инкрементального обновления нет**: после изменения выгрузки индекс
+   пересобирается целиком; прерванную сборку можно возобновить.
 
 ## 7. Точки расширения
 
 - Новый сигнал ранжирования → функция в `search_modes.py` + список в `rrf_fuse`.
 - Другая reranker-модель → `MCP_1C_RERANK_MODEL` (flashrank), без правки кода.
-- Другой корпус → `MCP_1C_STUDY_ROOT` / `MCP_1C_STUDY_REPORT_ROOT`, пересборка индекса.
+- Другой корпус → `MCP_1C_STUDY_ROOT` / `MCP_1C_METADATA_XML_ROOT`, пересборка индекса.
 - Новый MCP-tool → декоратор `@mcp.tool()` в `server.py`.

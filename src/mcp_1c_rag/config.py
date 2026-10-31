@@ -5,12 +5,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Project root: D:\MCP_1С_homework
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-STUDY_ROOT = Path(os.environ.get("MCP_1C_STUDY_ROOT", r"D:\Study"))
+STUDY_ROOT = Path(
+    os.environ.get("MCP_1C_STUDY_ROOT", str(Path.home() / "Study"))
+)
 STUDY_REPORT_ROOT = Path(
-    os.environ.get("MCP_1C_STUDY_REPORT_ROOT", r"D:\Study_Report")
+    os.environ.get("MCP_1C_STUDY_REPORT_ROOT", str(Path.home() / "Study_Report"))
 )
 # Optional extra metadata: *.xml from a configuration dump. Empty means off.
 # Set only in the process environment. Do not store a personal path in the repo.

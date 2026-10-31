@@ -26,8 +26,8 @@ STATE = ROOT / "data" / "index_tick_state.json"
 LAST = ROOT / "data" / "index_chat_last_report.json"
 
 LOOP_CMD = (
-    r"D:\MCP_1С_homework\.venv\Scripts\python.exe -u "
-    r"D:\MCP_1С_homework\scripts\index_tick_loop.py --interval 600"
+    f'"{sys.executable}" -u '
+    f'"{ROOT / "scripts" / "index_tick_loop.py"}" --interval 600'
 )
 
 

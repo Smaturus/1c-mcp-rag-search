@@ -2,13 +2,16 @@ import json
 import queue
 import subprocess
 import sys
+import tempfile
 import threading
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-PY = r"D:\MCP_1С_homework\.venv\Scripts\python.exe"
-CWD = r"D:\MCP_1С_homework"
-ERRLOG = r"C:\Users\smatu\AppData\Local\Temp\mcp_stdio_stderr.log"
+PROJECT = Path(__file__).resolve().parents[2]
+PY = sys.executable
+CWD = PROJECT
+ERRLOG = Path(tempfile.gettempdir()) / "mcp_stdio_stderr.log"
 
 err = open(ERRLOG, "w", encoding="utf-8")
 proc = subprocess.Popen(

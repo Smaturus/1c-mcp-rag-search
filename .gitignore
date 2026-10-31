@@ -62,6 +62,13 @@ cover_letters/
 progress.md
 Промпт_*.md
 docs/presentation/PRESENTATION_SPEECH.md
+docs/presentation/en/screenshots/
+docs/CHANGE_REPORT_*.md
+docs/presentation/build_deck.py
+docs/presentation/en/build_deck_en.py
+docs/presentation/en/build_one_pager_en.py
+docs/presentation/en/generate_screenshots.py
+docs/presentation/en/one-pager-en.pptx
 .mypy_cache*/
 .ruff_cache/
 .cursor/

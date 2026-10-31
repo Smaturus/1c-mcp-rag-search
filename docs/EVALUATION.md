@@ -58,8 +58,8 @@
 |---|---|---|---|---|
 | `lexical` | 0.141 | 0.228 | 0.218 | 0.293 |
 | `vector` | 0.089 ± 0.022 | 0.203 ± 0.027 | 0.208 ± 0.020 | 0.319 ± 0.025 |
-| `pearson` | — | — | 0.229 ± 0.019 | — |
-| `hybrid` | — | — | 0.217 ± 0.015 | — |
+| `pearson` | 0.113 ± 0.024 | 0.228 ± 0.029 | 0.229 ± 0.019 | 0.342 ± 0.014 |
+| `hybrid` | 0.094 ± 0.016 | 0.215 ± 0.019 | 0.217 ± 0.015 | 0.339 ± 0.021 |
 
 Δ(`vector` − `hybrid`) = −0.0097, CI [−0.0492; +0.0297], p = 0.635 —
 разница не значима, `hybrid` не хуже. Именно поэтому дефолт остаётся
@@ -108,15 +108,29 @@ CPU, без GPU, текущий корпус (v2 / v3): `lexical` ~8–17 мс, 
 
 ## Как воспроизвести
 
-```powershell
-# v2 dev
-python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir data\eval\code_proc
-python scripts\eval_stability.py --out-dir data\eval\code_proc
-python scripts\eval_paired.py
+Опубликованные сводки уже в репозитории: `data/eval/code_proc/report_stability.md`,
+`data/eval/code_proc/report_paired.md`, `data/eval/v3_code/report_stability.md`,
+`data/eval/v3_code/report_paired.md`. Сырых прогонов `run_*.json` в git нет
+(`eval_stability.py` читает только такие файлы в каталоге `--out-dir`).
+`eval_paired.py` без аргументов ищет `data/eval/code_proc/run_hybrid_*.json`
+и требует `--a` и `--b`.
 
-# v3 hold-out
-python scripts\eval_pipeline.py --golden data\eval\gold_set_v3_holdout.jsonl --out-dir data\eval\v3_code --scope code
-python scripts\eval_stability.py --out-dir data\eval\v3_code
+Чтобы снять числа заново, нужен локальный индекс. Каждый прогон — отдельный
+процесс; `report_pipeline.json` копируется в `run_N.json` рядом с остальными:
+
+```powershell
+New-Item -ItemType Directory -Force data\eval\_runs\v2, data\eval\_runs\v3 | Out-Null
+# v2 dev: четыре отдельных прогона, файлы data\eval\_runs\v2\run_1.json … run_4.json
+python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir data\eval\_runs\v2_work
+Copy-Item data\eval\_runs\v2_work\report_pipeline.json data\eval\_runs\v2\run_1.json
+python scripts\eval_stability.py --out-dir data\eval\_runs\v2
+python scripts\eval_paired.py --runs-glob "data/eval/_runs/v2/run_*.json" --a vector --b hybrid
+
+# v3 hold-out: три прогона в отдельном каталоге, чтобы не смешать их с v2
+python scripts\eval_pipeline.py --golden data\eval\gold_set_v3_holdout.jsonl --out-dir data\eval\_runs\v3_work --scope code
+Copy-Item data\eval\_runs\v3_work\report_pipeline.json data\eval\_runs\v3\run_1.json
+python scripts\eval_stability.py --out-dir data\eval\_runs\v3
+python scripts\eval_paired.py --runs-glob "data/eval/_runs/v3/run_*.json" --a vector --b hybrid
 python scripts\eval_anchors.py
 
 # маршрутизация и метаданные

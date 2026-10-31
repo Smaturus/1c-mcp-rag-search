@@ -229,7 +229,7 @@ data/eval/           gold-set и отчёты (индекс — data/eval/README
 
 - [ ] Код-ориентированная embedding-модель и новый baseline
 
-- [ ] RRF с весами источников и его сравнение
+- [x] RRF с весами источников, preprocessing и глубина каналов — проверено, значимого прироста на v2 нет ([docs/HISTORY.md](docs/HISTORY.md))
 
 - [ ] Новый независимый hold-out для маршрутизации (≥ 20 фраз)
 

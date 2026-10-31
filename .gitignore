@@ -61,7 +61,6 @@ cover_letters/
 # Personal / working notes (not part of the delivered project)
 progress.md
 Промпт_*.md
-docs/presentation/PRESENTATION_SPEECH.md
 docs/presentation/en/screenshots/
 docs/CHANGE_REPORT_*.md
 docs/presentation/build_deck.py

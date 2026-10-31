@@ -1,12 +1,16 @@
 import pickle
 import sqlite3
 import sys
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
+PROJECT = Path(__file__).resolve().parents[2]
+BACKUP = PROJECT / "data" / "chroma_backup_segments"
+
 BASES = [
-    ("metadata vec segment (1ad4885e)", r"D:\MCP_1С_homework\data\chroma_backup_segments\1ad4885e-9691-43c0-9ecf-f30b7c63108b\index_metadata.pickle"),
-    ("code vec segment (ec5cc1f7)", r"D:\MCP_1С_homework\data\chroma_backup_segments\ec5cc1f7-b259-4dee-a4c3-f23f8c2089c5\index_metadata.pickle"),
+    ("metadata vec segment (1ad4885e)", BACKUP / "1ad4885e-9691-43c0-9ecf-f30b7c63108b" / "index_metadata.pickle"),
+    ("code vec segment (ec5cc1f7)", BACKUP / "ec5cc1f7-b259-4dee-a4c3-f23f8c2089c5" / "index_metadata.pickle"),
 ]
 
 for label, path in BASES:
@@ -31,7 +35,7 @@ for label, path in BASES:
 
 print()
 print("=== sqlite space usage (top 12) ===")
-db = sqlite3.connect(r"D:\MCP_1С_homework\data\chroma\chroma.sqlite3")
+db = sqlite3.connect(PROJECT / "data" / "chroma" / "chroma.sqlite3")
 try:
     for row in db.execute(
         "SELECT name, ROUND(SUM(pgsize)/1048576.0,1) AS mb FROM dbstat "

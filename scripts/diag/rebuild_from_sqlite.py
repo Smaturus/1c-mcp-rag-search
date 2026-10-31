@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-PROJECT = Path(r"D:\MCP_1С_homework")
+PROJECT = Path(__file__).resolve().parents[2]
 OLD_DB = PROJECT / "data" / "chroma" / "chroma.sqlite3"
 NEW_DIR = PROJECT / "data" / "chroma_rebuilt"
 JOURNAL = PROJECT / "data" / "reindex_done.txt"

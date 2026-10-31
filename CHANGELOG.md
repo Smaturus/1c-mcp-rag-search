@@ -11,6 +11,32 @@
   веса 1.5/2/3, query preprocessing, глубины 20–50 не дают значимого прироста
   на v2; изменения в прод не внедрялись.
 
+### Changed
+
+- Документация разделена на входную и историческую: README описывает текущее
+  состояние; методика — `docs/EVALUATION.md`, хронология и отклонённые
+  гипотезы — `docs/HISTORY.md`, индексы — `docs/adr/README.md` и
+  `data/eval/README.md`.
+- Устранены расхождения в числах (74 теста, 81 МБ BM25, ADR 0001–0010),
+  исправлены относительные ссылки в `docs/ARCHITECTURE.md`, отчёт
+  `data/eval/v3_router.md` перекодирован в UTF-8.
+- Из публичных JSON-отчётов удалены абсолютные локальные пути: provenance
+  переведён в относительные пути.
+- Презентации (RU/EN и one-pager) пересобраны: актуализированы термы и размер
+  BM25, убраны устаревшие замеры reranker и латентности.
+- Диагностические скрипты и `index_tick_ctl.py` больше не содержат абсолютных
+  локальных путей; пути по умолчанию в `config.py` — `~/Study` и
+  `~/Study_Report`. Удалена пустая заглушка `docs/INDEXING_TICKS.md`.
+- Удалены заметки спикера `docs/presentation/en/NOTES_RU.md` и текст выступления
+  `docs/presentation/en/SPEECH_EN.md`. В репозитории остаются слайды (PPTX/PDF)
+  и `ONE_PAGER_EN.pdf`.
+- Из репозитория убраны генераторы колод и исходник one-pager:
+  `docs/presentation/build_deck.py`, `docs/presentation/en/build_deck_en.py`,
+  `docs/presentation/en/build_one_pager_en.py`,
+  `docs/presentation/en/generate_screenshots.py`,
+  `docs/presentation/en/one-pager-en.pptx`.
+- Каталог `docs/presentation/en/screenshots/` убран из репозитория.
+
 ## [0.5.0] — 2026-10-23
 
 ### Added
@@ -60,9 +86,8 @@
   агрегаты (0.176 / 0.209); клетка «старый экспорт × процедурная» **не измерима**
   (дамп утрачен). Вывод: сдвиг лидера объясняется **нарезкой** (эффект +0.174 / +0.096),
   эффект экспорта — в пределах шума; interaction не оценён.
-- **English presentation kit** (`docs/presentation/en/`): 12-слайдовый deck (PPTX/PDF),
-  речь на 10 минут (`SPEECH_EN.md`), one-pager (`ONE_PAGER_EN.pdf`),
-  fallback-скриншоты демо и RU-шпаргалка (`NOTES_RU.md`).
+- **English presentation kit** (`docs/presentation/en/`): 12-слайдовый deck (PPTX/PDF)
+  и one-pager (`ONE_PAGER_EN.pdf`).
 
 ### Changed
 

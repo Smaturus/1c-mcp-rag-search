@@ -1,4 +1,4 @@
-"""Build local Chroma index from D:\\Study (.bsl) and D:\\Study_Report (.txt)."""
+"""Build local Chroma index from the configured study root (.bsl) and report root (.txt)."""
 
 from __future__ import annotations
 

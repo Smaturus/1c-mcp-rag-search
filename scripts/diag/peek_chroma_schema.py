@@ -1,9 +1,13 @@
 import sqlite3
 import sys
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-db = sqlite3.connect(r"D:\MCP_1С_homework\data\chroma\chroma.sqlite3")
+PROJECT = Path(__file__).resolve().parents[2]
+DB = PROJECT / "data" / "chroma" / "chroma.sqlite3"
+
+db = sqlite3.connect(DB)
 db.row_factory = sqlite3.Row
 
 for table in ("embeddings", "embedding_metadata", "embedding_fulltext_search_content",

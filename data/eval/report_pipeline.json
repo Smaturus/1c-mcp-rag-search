@@ -819,5 +819,5 @@
       }
     ]
   },
-  "golden": "D:\\MCP_1С_homework\\data\\eval\\gold_set.jsonl"
+  "golden": "data\\eval\\gold_set.jsonl"
 }

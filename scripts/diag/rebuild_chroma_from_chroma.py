@@ -3,14 +3,16 @@
 import shutil
 import sys
 import time
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 import chromadb
 from chromadb.config import Settings
 
-OLD = r"D:\MCP_1С_homework\data\chroma"
-NEW = r"D:\MCP_1С_homework\data\chroma_rebuilt"
+PROJECT = Path(__file__).resolve().parents[2]
+OLD = PROJECT / "data" / "chroma"
+NEW = PROJECT / "data" / "chroma_rebuilt"
 BATCH = 2000
 
 shutil.rmtree(NEW, ignore_errors=True)

@@ -3,10 +3,10 @@
     "kind": "runs_glob",
     "description": "4 прогонов по шаблону `.tmp/v2_prod_run*/report_pipeline.json`",
     "files": [
-      "D:\\MCP_1С_homework\\.tmp\\v2_prod_run1\\report_pipeline.json",
-      "D:\\MCP_1С_homework\\.tmp\\v2_prod_run2\\report_pipeline.json",
-      "D:\\MCP_1С_homework\\.tmp\\v2_prod_run3\\report_pipeline.json",
-      "D:\\MCP_1С_homework\\.tmp\\v2_prod_run4\\report_pipeline.json"
+      ".tmp\\v2_prod_run1\\report_pipeline.json",
+      ".tmp\\v2_prod_run2\\report_pipeline.json",
+      ".tmp\\v2_prod_run3\\report_pipeline.json",
+      ".tmp\\v2_prod_run4\\report_pipeline.json"
     ],
     "n_runs": 4
   },

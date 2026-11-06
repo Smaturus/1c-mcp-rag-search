@@ -76,6 +76,8 @@ flowchart TB
 | `rerank.py` | cross-encoder второй стадии (flashrank, ONNX, CPU) |
 | `search_modes.py` | единый фасад: `vector` / `hybrid` / `hybrid_rerank` / `pearson` / `lexical` |
 | `search_context.py` | `SearchContext`: ленивые кэши BM25 / prefix-масок / count коллекций; `search_modes.default_context` — процессный default (P1a, без смены scoring) |
+| `formatting.py` | текстовое представление кандидатов (`format_candidates`); re-export из `search_modes` |
+| `merge.py` | `merged_search`: объединение коллекций с нормализацией `max` (дефолт) / `rrf` / `minmax` (ADR 0011) |
 | `router.py` | контракт выбора инструмента lexical / vector / hybrid |
 | `models.py` | `Candidate` — лёгкая модель результата (без тяжёлых импортов) |
 | `eval_metrics.py` | метрики качества, чистые функции |

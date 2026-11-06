@@ -5,11 +5,11 @@ from __future__ import annotations
 from mcp.server.mcpserver import MCPServer
 
 from mcp_1c_rag import eval_retrieval as eval_mod
+from mcp_1c_rag import merge, search_modes
 from mcp_1c_rag import search as legacy_search
-from mcp_1c_rag import search_modes
-from mcp_1c_rag.config import COLLECTION_CODE, COLLECTION_METADATA, SEARCH_DEFAULT_MODE
+from mcp_1c_rag.config import COLLECTION_METADATA, SEARCH_DEFAULT_MODE
+from mcp_1c_rag.formatting import format_candidates
 from mcp_1c_rag.index_guard import IndexBusy
-from mcp_1c_rag.models import Candidate
 from mcp_1c_rag.router import route_query as route_decision
 
 mcp = MCPServer(
@@ -52,13 +52,16 @@ def search(
     chosen_mode = (mode or SEARCH_DEFAULT_MODE).strip().lower() or SEARCH_DEFAULT_MODE
     try:
         if key == "all":
-            return _merged_search(query, chosen_mode, max(1, int(top_k)))
-        candidates = search_modes.search(
-            query=query,
-            top_k=top_k,
-            mode=(mode or None),
-            collection=collection,
-        )
+            candidates = merge.merged_search(
+                query, chosen_mode, max(1, int(top_k))
+            )
+        else:
+            candidates = search_modes.search(
+                query=query,
+                top_k=top_k,
+                mode=(mode or None),
+                collection=collection,
+            )
     except FileNotFoundError as exc:
         return (
             f"{exc}\n"
@@ -69,7 +72,7 @@ def search(
         return str(exc)
     except ValueError as exc:
         return f"{exc}"
-    return search_modes.format_candidates(candidates)
+    return format_candidates(candidates)
 
 
 @mcp.tool()
@@ -164,38 +167,6 @@ def index_stats() -> str:
     return "\n".join(lines)
 
 
-def _merged_search(
-    query: str,
-    mode: str,
-    limit: int,
-    collections: tuple[str, ...] | None = None,
-) -> str:
-    """Поиск по коллекциям с нормализацией скоров и объединением."""
-    found: list[tuple[float, Candidate]] = []
-    for collection in collections or (COLLECTION_CODE, COLLECTION_METADATA):
-        try:
-            candidates = search_modes.search(
-                query=query, top_k=limit, mode=mode, collection=collection
-            )
-        except FileNotFoundError:
-            continue
-        if not candidates:
-            continue
-        top = max(candidate.score for candidate in candidates) or 1.0
-        for candidate in candidates:
-            candidate.metadata["collection"] = collection
-            found.append((candidate.score / top, candidate))
-    found.sort(key=lambda pair: pair[0], reverse=True)
-    seen: set[str] = set()
-    unique = []
-    for _, candidate in found:
-        if candidate.id in seen:
-            continue
-        seen.add(candidate.id)
-        unique.append(candidate)
-    return search_modes.format_candidates(unique[:limit])
-
-
 def codesearch(query: str, limit: int = 5) -> str:
     """legacy Python alias, not an MCP tool — cosine search по BSL."""
     return legacy_search.codesearch(query=query, limit=limit)
@@ -208,19 +179,28 @@ def metadatasearch(query: str, limit: int = 20) -> str:
 
 def search_1c_metadata(query: str, limit: int = 10) -> str:
     """legacy Python alias, not an MCP tool — lexical по metadata_xml."""
-    return _merged_search(
-        query, "lexical", max(1, int(limit)), collections=(COLLECTION_METADATA,)
+    return format_candidates(
+        merge.merged_search(
+            query,
+            "lexical",
+            max(1, int(limit)),
+            collections=(COLLECTION_METADATA,),
+        )
     )
 
 
 def search_knowledge_base(query: str, limit: int = 10) -> str:
     """legacy Python alias, not an MCP tool — vector по обеим коллекциям."""
-    return _merged_search(query, "vector", max(1, int(limit)))
+    return format_candidates(
+        merge.merged_search(query, "vector", max(1, int(limit)))
+    )
 
 
 def search_hybrid(query: str, limit: int = 10) -> str:
     """legacy Python alias, not an MCP tool — hybrid по обеим коллекциям."""
-    return _merged_search(query, "hybrid", max(1, int(limit)))
+    return format_candidates(
+        merge.merged_search(query, "hybrid", max(1, int(limit)))
+    )
 
 
 def main() -> None:

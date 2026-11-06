@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import sys
 from pathlib import Path
 from typing import Any
@@ -42,10 +43,10 @@ def test_legacy_aliases_callable_but_not_tools() -> None:
         assert name not in _tool_names()
 
 
-def test_search_collection_all_uses_merged(
+def test_search_collection_all_uses_merge(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """collection='all' идёт через _merged_search (обе коллекции)."""
+    """collection='all' идёт через merge.merged_search (обе коллекции)."""
     seen: list[tuple[str, str, int]] = []
 
     def fake_merged(
@@ -53,12 +54,14 @@ def test_search_collection_all_uses_merged(
         mode: str,
         limit: int,
         collections: tuple[str, ...] | None = None,
-    ) -> str:
+        **kwargs: Any,
+    ) -> list[Candidate]:
         seen.append((query, mode, limit))
         assert collections is None  # default: code + metadata
-        return "MERGED"
+        return [Candidate(id="1", text="t", metadata={}, score=1.0)]
 
-    monkeypatch.setattr(server, "_merged_search", fake_merged)
+    monkeypatch.setattr(server.merge, "merged_search", fake_merged)
+    monkeypatch.setattr(server, "format_candidates", lambda cands: "MERGED")
     out = server.search("НДС", top_k=3, mode="hybrid", collection="all")
     assert out == "MERGED"
     assert seen == [("НДС", "hybrid", 3)]
@@ -83,7 +86,7 @@ def test_search_collection_metadata_and_code(
 
     monkeypatch.setattr(server.search_modes, "search", fake_search)
     monkeypatch.setattr(
-        server.search_modes,
+        server,
         "format_candidates",
         lambda cands: f"n={len(cands)}",
     )
@@ -99,3 +102,13 @@ def test_route_query_mcp_format() -> None:
     assert "mode=lexical" in text
     assert "collection=metadata_xml" in text
     assert "route=lexical" in text
+
+
+def test_server_has_no_inline_score_normalization() -> None:
+    """Бизнес-нормализация скоров живёт в merge, не в server."""
+    source = inspect.getsource(server)
+    assert "_merged_search" not in source
+    assert "score / top" not in source
+    assert "max_score" not in source
+    assert "merged_search" in source
+    assert "format_candidates" in source

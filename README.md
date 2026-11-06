@@ -73,7 +73,7 @@ python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir d
 
 | Tool | Назначение |
 | --- | --- |
-| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc`/`code`, `metadata_xml`/`metadata`, `all` (обе коллекции) |
+| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc`/`code`, `metadata_xml`/`metadata`, `all` (merge через `merge.merged_search`, нормализация `max` — ADR 0011) |
 | `evaluate_retrieval(query, k, …)` | Hit@k, Recall@k, MRR, nDCG по одному запросу |
 | `route_query(query)` | маршрут → `tool=search` + `mode` + `collection`, причина и уверенность |
 | `index_stats()` | какой индекс обслуживается: каталог, коллекции, размеры, дефолтный режим |

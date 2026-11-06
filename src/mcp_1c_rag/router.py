@@ -1,16 +1,17 @@
 """Маршрутизация запроса к стратегии поиска.
 
 Правила перенесены из рабочего промпта ассистента 1С и превращены в проверяемую
-функцию: выбор инструмента не должен зависеть от того, как промпт «поняла»
-модель. Решение объяснимо: маршрут, причина, уверенность.
+функцию: выбор режима не должен зависеть от того, как промпт «поняла» модель.
+Решение объяснимо: маршрут, причина, уверенность, вызов ``search``.
 
-Три маршрута соответствуют трём инструментам MCP-сервера:
+Единый MCP-инструмент поиска — ``search``. Маршрутизатор возвращает параметры:
 
-- ``lexical`` → ``search_1c_metadata``: точные имена, проводки, движения,
-  связи между документами («grep-подобный» BM25-поиск);
-- ``vector`` → ``search_knowledge_base``: «как сделать», «почему не работает»,
-  инструкции, опыт;
-- ``hybrid`` → ``search_hybrid``: смешанные формулировки, требования, Confluence.
+- ``lexical`` → ``search(mode="lexical", collection="metadata_xml")``:
+  точные имена, проводки, движения, связи («grep-подобный» BM25);
+- ``vector`` → ``search(mode="vector", collection="all")``:
+  «как сделать», «почему не работает», инструкции, опыт;
+- ``hybrid`` → ``search(mode="hybrid", collection="all")``:
+  смешанные формулировки, требования, Confluence.
 
 При сомнении выбирается ``hybrid`` — как в исходном промпте.
 
@@ -39,19 +40,35 @@ class Route(StrEnum):
 
 @dataclass(frozen=True)
 class RouteDecision:
-    """Результат маршрутизации: что выбрали и почему."""
+    """Результат маршрутизации: какой вызов ``search`` сделать и почему."""
 
     route: Route
     reason: str
     confidence: float
-    tool: str
+    tool: str = "search"
+    mode: str = "hybrid"
+    collection: str = "all"
 
 
-_TOOL_BY_ROUTE = {
-    Route.LEXICAL: "search_1c_metadata",
-    Route.VECTOR: "search_knowledge_base",
-    Route.HYBRID: "search_hybrid",
+# mode / collection для единого MCP-инструмента search (семантика прежних tools).
+_CALL_BY_ROUTE: dict[Route, tuple[str, str]] = {
+    Route.LEXICAL: ("lexical", "metadata_xml"),
+    Route.VECTOR: ("vector", "all"),
+    Route.HYBRID: ("hybrid", "all"),
 }
+
+
+def _decision(route: Route, reason: str, confidence: float) -> RouteDecision:
+    mode, collection = _CALL_BY_ROUTE[route]
+    return RouteDecision(
+        route=route,
+        reason=reason,
+        confidence=confidence,
+        tool="search",
+        mode=mode,
+        collection=collection,
+    )
+
 
 # Точные имена объектов 1С и обработчиков: РеализацияТоваровУслуг, ПередЗаписью,
 # ИспользоватьОбменВС. Требуем внутреннюю заглавную букву (CamelCase), чтобы
@@ -159,83 +176,73 @@ def _names(features: _Features) -> str:
 def _decide(features: _Features) -> RouteDecision:
     """Каскад решений; порядок и пороги обоснованы в ADR 0006."""
     if features.hybrid_marker:
-        return RouteDecision(
+        return _decision(
             Route.HYBRID,
             "признаки требований/доработок или механизма; нужен гибридный поиск",
             0.85,
-            _TOOL_BY_ROUTE[Route.HYBRID],
         )
     if features.negation:
-        return RouteDecision(
+        return _decision(
             Route.HYBRID,
             "вопрос об отсутствии сущности («без движений/проводок») — нужны оба сигнала",
             0.75,
-            _TOOL_BY_ROUTE[Route.HYBRID],
         )
     if features.has_exact and (features.diagnostic or features.strong_semantic):
-        return RouteDecision(
+        return _decision(
             Route.HYBRID,
             f"точное имя ({_names(features)}) + смысловая/диагностическая часть",
             0.75,
-            _TOOL_BY_ROUTE[Route.HYBRID],
         )
     if features.has_exact:
-        return RouteDecision(
+        return _decision(
             Route.LEXICAL,
             f"точные имена/коды: {_names(features)}",
             round(min(0.95, 0.65 + 0.05 * len(features.exact_names)), 2),
-            _TOOL_BY_ROUTE[Route.LEXICAL],
         )
     if features.has_requisite_name:
-        return RouteDecision(
+        return _decision(
             Route.HYBRID,
             "название реквизита/опции без строгого CamelCase — нужны BM25 и вектор",
             0.65,
-            _TOOL_BY_ROUTE[Route.HYBRID],
         )
     if features.diagnostic and not features.strong_semantic:
-        return RouteDecision(
+        return _decision(
             Route.HYBRID,
             "диагностическая формулировка без сильного смыслового маркера",
             0.65,
-            _TOOL_BY_ROUTE[Route.HYBRID],
         )
     if features.strong_semantic:
         if features.lexical_hits >= 2:
-            return RouteDecision(
+            return _decision(
                 Route.HYBRID,
                 f"смешанный запрос: термины ({features.lexical_hits}) и смысл",
                 0.7,
-                _TOOL_BY_ROUTE[Route.HYBRID],
             )
-        return RouteDecision(
+        return _decision(
             Route.VECTOR,
             "смысловой/диагностический вопрос без точных имён",
             0.8,
-            _TOOL_BY_ROUTE[Route.VECTOR],
         )
     if features.lexical_hits:
-        return RouteDecision(
+        return _decision(
             Route.LEXICAL,
             f"точные термины системы ({features.lexical_hits}) без смыслового вопроса",
             round(min(0.9, 0.6 + 0.05 * features.lexical_hits), 2),
-            _TOOL_BY_ROUTE[Route.LEXICAL],
         )
-    return RouteDecision(
+    return _decision(
         Route.HYBRID,
         "недостаточно признаков; по правилу «сомневаешься — hybrid»",
         0.4,
-        _TOOL_BY_ROUTE[Route.HYBRID],
     )
 
 
 def route_query(query: str) -> RouteDecision:
-    """Выбрать маршрут поиска по правилам из промпта ассистента.
+    """Выбрать параметры ``search`` по правилам из промпта ассистента.
 
     Args:
         query: Вопрос или фраза пользователя.
 
     Returns:
-        RouteDecision с маршрутом, причиной, уверенностью и именем tool'а.
+        RouteDecision: ``tool="search"``, ``mode``, ``collection``, причина и уверенность.
     """
     return _decide(_extract_features(query))

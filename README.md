@@ -69,24 +69,35 @@ python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir d
 
 ## MCP-инструменты
 
+Четыре MCP-инструмента:
+
 | Tool | Назначение |
 | --- | --- |
-| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson` |
-| `search_1c_metadata(query, limit=10)` | grep-подобный лексический поиск: имена, обработчики, движения, проводки, «кто пишет в регистр» |
-| `search_knowledge_base(query, limit=10)` | векторный поиск: «как сделать», «почему не работает», инструкции |
-| `search_hybrid(query, limit=10)` | гибрид (RRF): смешанные формулировки, требования, ТЗ |
-| `route_query(query)` | маршрут, инструмент, причина и уверенность |
-| `index_stats()` | какой индекс обслуживается: каталог, коллекции, размеры, дефолтный режим |
-| `codesearch(query, limit=5)` | семантический поиск по `.bsl` (исторический baseline) |
-| `metadatasearch(query, limit=20)` | поиск по метаданным (исторический) |
+| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc`/`code`, `metadata_xml`/`metadata`, `all` (обе коллекции) |
 | `evaluate_retrieval(query, k, …)` | Hit@k, Recall@k, MRR, nDCG по одному запросу |
+| `route_query(query)` | маршрут → `tool=search` + `mode` + `collection`, причина и уверенность |
+| `index_stats()` | какой индекс обслуживается: каталог, коллекции, размеры, дефолтный режим |
 
+Примеры `search`:
+
+```text
+search("ПередЗаписью", mode="lexical", collection="metadata_xml")
+search("как настроить обмен", mode="vector", collection="all")
+search("НДС с аванса", mode="hybrid", collection="all")
+search("ПровестиДокумент", collection="code_proc")
+```
+
+### Legacy Python aliases (not MCP tools)
+
+В модуле `mcp_1c_rag.server` остались обычные Python-функции для совместимости:
+`codesearch`, `metadatasearch`, `search_1c_metadata`, `search_knowledge_base`,
+`search_hybrid`. Они **не** регистрируются как MCP tools.
 
 Стек: MCP Python SDK 2.x + Chroma + `intfloat/multilingual-e5-small` + собственный BM25 + flashrank (опция).
 
 ## Маршрутизация
 
-Правила выбора инструмента — код с тестами ([`router.py`](src/mcp_1c_rag/router.py), [`tests/test_router.py`](tests/test_router.py)), а не текст промпта.
+Правила выбора `mode`/`collection` для `search` — код с тестами ([`router.py`](src/mcp_1c_rag/router.py), [`tests/test_router.py`](tests/test_router.py)), а не текст промпта.
 
 | Признак в запросе | Маршрут |
 | --- | --- |
@@ -178,10 +189,10 @@ Source-dedup (live, 2026-11-06): `max_per_source=2` против `0`, pool=30, s
 }
 ```
 
-После перезапуска клиента появятся все **9 tools**. Проверка без клиента:
+После перезапуска клиента появятся **4 tools** (`search`, `evaluate_retrieval`, `route_query`, `index_stats`). Проверка без клиента:
 
 ```powershell
-python -c "from mcp_1c_rag.search import codesearch, metadatasearch; print(codesearch('Провести', 3)); print(metadatasearch('Справочник', 3))"
+python -c "import asyncio; from mcp_1c_rag import server; print(sorted(t.name for t in asyncio.run(server.mcp.list_tools())))"
 ```
 
 ## Разработка и качество

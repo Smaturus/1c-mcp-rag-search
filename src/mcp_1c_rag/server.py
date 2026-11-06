@@ -1,4 +1,4 @@
-"""MCP stdio server: codesearch, metadatasearch, evaluate_retrieval, search."""
+"""MCP stdio server: search, evaluate_retrieval, route_query, index_stats."""
 
 from __future__ import annotations
 
@@ -7,48 +7,69 @@ from mcp.server.mcpserver import MCPServer
 from mcp_1c_rag import eval_retrieval as eval_mod
 from mcp_1c_rag import search as legacy_search
 from mcp_1c_rag import search_modes
-from mcp_1c_rag.config import COLLECTION_CODE, COLLECTION_METADATA
+from mcp_1c_rag.config import COLLECTION_CODE, COLLECTION_METADATA, SEARCH_DEFAULT_MODE
 from mcp_1c_rag.index_guard import IndexBusy
 from mcp_1c_rag.models import Candidate
-from mcp_1c_rag.router import Route
 from mcp_1c_rag.router import route_query as route_decision
 
 mcp = MCPServer(
     "1c-mcp-rag-search",
     instructions=(
-        "1C retrieval MCP: semantic + lexical search over BSL code and "
-        "configuration metadata. "
-        "Default collections: code_proc (BSL procedures) and metadata_xml "
-        "(XML metadata); legacy aliases code/metadata still resolve. "
-        "Tools: codesearch, metadatasearch (cosine baseline), "
-        "search(query, top_k, mode, collection) with modes vector | hybrid (RRF) "
-        "| hybrid_rerank | pearson, and evaluate_retrieval for quality metrics "
-        "(Hit@k / MRR / nDCG / null-tail). Measured: vector leads on the current corpus; "
-        "hybrid is strongest for exact names (ADR 0009)."
+        "1C retrieval MCP: four tools — search, evaluate_retrieval, route_query, "
+        "index_stats. "
+        "search(query, top_k, mode, collection) covers BSL and metadata: "
+        "collection empty/code_proc/code → code; metadata_xml/metadata → metadata; "
+        "all → both collections merged. "
+        "Modes: lexical | vector | hybrid (default) | hybrid_rerank | pearson. "
+        "route_query returns tool=search with mode/collection to call. "
+        "Legacy Python aliases (codesearch, metadatasearch, search_1c_metadata, "
+        "search_knowledge_base, search_hybrid) are not MCP tools."
     ),
 )
 
 
 @mcp.tool()
-def codesearch(query: str, limit: int = 5) -> str:
-    """Search 1C BSL code in object/form/common modules.
+def search(
+    query: str,
+    top_k: int = 5,
+    mode: str = "",
+    collection: str = "",
+) -> str:
+    """Unified retrieval: vector | hybrid (RRF) | hybrid_rerank | pearson (baseline).
+
+    Pipeline: e5 cosine top-N + global BM25 top-N -> RRF -> optional cross-encoder
+    rerank (flashrank, ms-marco-MultiBERT-L-12). Default mode is ``hybrid``.
 
     Args:
-        query: Code fragment, procedure name, comment, or description to find.
-        limit: Max results (default 5). Raise to see more; lower to save context.
+        query: Natural-language or exact-name query (e.g. "НДС с аванса").
+        top_k: How many results to return (default 5).
+        mode: lexical | vector | hybrid | hybrid_rerank | pearson;
+            empty = server default.
+        collection: code_proc/code (BSL), metadata_xml/metadata, or all
+            (both collections merged); empty = server default (code_proc).
     """
-    return legacy_search.codesearch(query=query, limit=limit)
-
-
-@mcp.tool()
-def metadatasearch(query: str, limit: int = 20) -> str:
-    """Search 1C metadata objects, fields and types in the configuration report.
-
-    Args:
-        query: Object name/path (e.g. Справочники.Номенклатура) or free-text description.
-        limit: Max results (default 20). Raise for wide objects; lower to save context.
-    """
-    return legacy_search.metadatasearch(query=query, limit=limit)
+    key = (collection or "").strip().lower()
+    chosen_mode = (mode or SEARCH_DEFAULT_MODE).strip().lower() or SEARCH_DEFAULT_MODE
+    try:
+        if key == "all":
+            return _merged_search(query, chosen_mode, max(1, int(top_k)))
+        candidates = search_modes.search(
+            query=query,
+            top_k=top_k,
+            mode=(mode or None),
+            collection=collection,
+        )
+    except FileNotFoundError as exc:
+        return (
+            f"{exc}\n"
+            "Подсказка: соберите BM25-индекс `python scripts/build_bm25.py` "
+            "или используйте mode='vector'."
+        )
+    except IndexBusy as exc:
+        return str(exc)
+    except ValueError as exc:
+        return f"{exc}"
+    return search_modes.format_candidates(candidates)
 
 
 @mcp.tool()
@@ -82,136 +103,12 @@ def evaluate_retrieval(
 
 
 @mcp.tool()
-def search(
-    query: str,
-    top_k: int = 5,
-    mode: str = "",
-    collection: str = "",
-) -> str:
-    """Unified retrieval: vector | hybrid (RRF) | hybrid_rerank | pearson (baseline).
-
-    Pipeline: e5 cosine top-N + global BM25 top-N -> RRF -> optional cross-encoder
-    rerank (flashrank, ms-marco-MultiBERT-L-12). Default mode is ``hybrid``:
-    it wins on nDCG@10/MRR@10 in eval and is ~26x faster than rerank.
-
-    Args:
-        query: Natural-language or exact-name query (e.g. "НДС с аванса").
-        top_k: How many results to return (default 5).
-        mode: lexical | vector | hybrid | hybrid_rerank | pearson;
-            empty = server default.
-        collection: code_proc (BSL) or metadata_xml (XML metadata);
-            legacy aliases code/metadata; empty = server default.
-    """
-    try:
-        candidates = search_modes.search(
-            query=query,
-            top_k=top_k,
-            mode=(mode or None),
-            collection=collection,
-        )
-    except FileNotFoundError as exc:
-        return (
-            f"{exc}\n"
-            "Подсказка: соберите BM25-индекс `python scripts/build_bm25.py` "
-            "или используйте mode='vector'."
-        )
-    except IndexBusy as exc:
-        return str(exc)
-    except ValueError as exc:
-        return f"{exc}"
-    return search_modes.format_candidates(candidates)
-
-
-_MODE_BY_ROUTE = {
-    Route.LEXICAL: "lexical",
-    Route.VECTOR: "vector",
-    Route.HYBRID: "hybrid",
-}
-
-
-def _merged_search(
-    query: str,
-    mode: str,
-    limit: int,
-    collections: tuple[str, ...] | None = None,
-) -> str:
-    """Поиск по коллекциям с нормализацией скоров и объединением."""
-    found: list[tuple[float, Candidate]] = []
-    for collection in collections or (COLLECTION_CODE, COLLECTION_METADATA):
-        try:
-            candidates = search_modes.search(
-                query=query, top_k=limit, mode=mode, collection=collection
-            )
-        except FileNotFoundError:
-            continue
-        if not candidates:
-            continue
-        top = max(candidate.score for candidate in candidates) or 1.0
-        for candidate in candidates:
-            candidate.metadata["collection"] = collection
-            found.append((candidate.score / top, candidate))
-    found.sort(key=lambda pair: pair[0], reverse=True)
-    seen: set[str] = set()
-    unique = []
-    for _, candidate in found:
-        if candidate.id in seen:
-            continue
-        seen.add(candidate.id)
-        unique.append(candidate)
-    return search_modes.format_candidates(unique[:limit])
-
-
-@mcp.tool()
-def search_1c_metadata(query: str, limit: int = 10) -> str:
-    """Grep-like lexical search for exact 1C names, handlers and relations.
-
-    Use for exact object/procedure names (РеализацияТоваровУслуг, ПередЗаписью),
-    questions about "движения", "проводки", "кто пишет в регистр", "на основании",
-    "связанные документы". Backed by the global BM25 index over the metadata
-    collection, so it ranks matches instead of dumping raw grep lines.
-
-    Args:
-        query: Exact name or a question with exact terms.
-        limit: Max results (default 10).
-    """
-    return _merged_search(query, "lexical", max(1, int(limit)), collections=(COLLECTION_METADATA,))
-
-
-@mcp.tool()
-def search_knowledge_base(query: str, limit: int = 10) -> str:
-    """Semantic (vector) search for "how to" and troubleshooting questions.
-
-    Use for how-to, instructions, "почему не работает", best practices, experience.
-    Backed by e5-small cosine over both collections.
-
-    Args:
-        query: Natural-language question.
-        limit: Max results (default 10).
-    """
-    return _merged_search(query, "vector", max(1, int(limit)))
-
-
-@mcp.tool()
-def search_hybrid(query: str, limit: int = 10) -> str:
-    """Hybrid search (cosine + BM25 via RRF) for mixed or requirement queries.
-
-    Use when the question mixes an exact term with meaning, or asks for current
-    requirements (Confluence / ТЗ / регламент). This is also the safe default.
-
-    Args:
-        query: Mixed natural-language and exact-term question.
-        limit: Max results (default 10).
-    """
-    return _merged_search(query, "hybrid", max(1, int(limit)))
-
-
-@mcp.tool()
 def route_query(query: str) -> str:
-    """Explain which search tool to use for a query, and why.
+    """Explain which search() call to use for a query, and why.
 
     Applies the routing contract: lexical for exact names/relations, vector for
     how-to questions, hybrid for mixed or requirement queries (and for anything
-    unclear). Returns route, tool, reason and confidence.
+    unclear). Returns route, tool=search, mode, collection, reason, confidence.
 
     Args:
         query: The user question to classify.
@@ -220,6 +117,8 @@ def route_query(query: str) -> str:
     return (
         f"route={decision.route.value}\n"
         f"tool={decision.tool}\n"
+        f"mode={decision.mode}\n"
+        f"collection={decision.collection}\n"
         f"confidence={decision.confidence}\n"
         f"reason={decision.reason}"
     )
@@ -263,6 +162,65 @@ def index_stats() -> str:
     bm25_file = Path(BM25_DIR) / "index.npz"
     lines.append(f"bm25_index_present={bm25_file.exists()}")
     return "\n".join(lines)
+
+
+def _merged_search(
+    query: str,
+    mode: str,
+    limit: int,
+    collections: tuple[str, ...] | None = None,
+) -> str:
+    """Поиск по коллекциям с нормализацией скоров и объединением."""
+    found: list[tuple[float, Candidate]] = []
+    for collection in collections or (COLLECTION_CODE, COLLECTION_METADATA):
+        try:
+            candidates = search_modes.search(
+                query=query, top_k=limit, mode=mode, collection=collection
+            )
+        except FileNotFoundError:
+            continue
+        if not candidates:
+            continue
+        top = max(candidate.score for candidate in candidates) or 1.0
+        for candidate in candidates:
+            candidate.metadata["collection"] = collection
+            found.append((candidate.score / top, candidate))
+    found.sort(key=lambda pair: pair[0], reverse=True)
+    seen: set[str] = set()
+    unique = []
+    for _, candidate in found:
+        if candidate.id in seen:
+            continue
+        seen.add(candidate.id)
+        unique.append(candidate)
+    return search_modes.format_candidates(unique[:limit])
+
+
+def codesearch(query: str, limit: int = 5) -> str:
+    """legacy Python alias, not an MCP tool — cosine search по BSL."""
+    return legacy_search.codesearch(query=query, limit=limit)
+
+
+def metadatasearch(query: str, limit: int = 20) -> str:
+    """legacy Python alias, not an MCP tool — cosine search по метаданным."""
+    return legacy_search.metadatasearch(query=query, limit=limit)
+
+
+def search_1c_metadata(query: str, limit: int = 10) -> str:
+    """legacy Python alias, not an MCP tool — lexical по metadata_xml."""
+    return _merged_search(
+        query, "lexical", max(1, int(limit)), collections=(COLLECTION_METADATA,)
+    )
+
+
+def search_knowledge_base(query: str, limit: int = 10) -> str:
+    """legacy Python alias, not an MCP tool — vector по обеим коллекциям."""
+    return _merged_search(query, "vector", max(1, int(limit)))
+
+
+def search_hybrid(query: str, limit: int = 10) -> str:
+    """legacy Python alias, not an MCP tool — hybrid по обеим коллекциям."""
+    return _merged_search(query, "hybrid", max(1, int(limit)))
 
 
 def main() -> None:

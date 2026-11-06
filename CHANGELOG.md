@@ -11,6 +11,17 @@
   веса 1.5/2/3, query preprocessing, глубины 20–50 не дают значимого прироста
   на v2; изменения в прод не внедрялись.
 
+### Removed
+
+- **Breaking (MCP surface):** tools `codesearch`, `metadatasearch`,
+  `search_1c_metadata`, `search_knowledge_base`, `search_hybrid` больше не
+  регистрируются в MCP. Остаются 4: `search`, `evaluate_retrieval`,
+  `route_query`, `index_stats`. Эквиваленты через `search`:
+  `collection="metadata_xml"` + `mode="lexical"`;
+  `collection="all"` + `mode="vector"|"hybrid"`.
+  Python-алиасы прежних имён сохранены в `server.py` (не MCP tools).
+  `route_query` возвращает `tool=search` + `mode` + `collection`.
+
 ### Changed
 
 - Документация разделена на входную и историческую: README описывает текущее

@@ -77,3 +77,7 @@ RERANK_MODEL = os.environ.get("MCP_1C_RERANK_MODEL", "ms-marco-MultiBERT-L-12")
 RERANK_MAX_LENGTH = int(os.environ.get("MCP_1C_RERANK_MAX_LENGTH", "128"))
 # How many RRF candidates to feed into the reranker (plan: keep <= 50).
 RERANK_CANDIDATES = int(os.environ.get("MCP_1C_RERANK_CANDIDATES", "20"))
+
+# Source-level diversity: max chunks per file in search() results.
+# Default 2 (accepted by Task 5); set 0 to disable dedup.
+MAX_PER_SOURCE = int(os.environ.get("MCP_1C_MAX_PER_SOURCE", "2"))

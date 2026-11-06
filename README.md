@@ -4,18 +4,19 @@
 
 [![M8ven Score](https://m8ven.ai/badge/mcp/smaturus-1c-mcp-rag-search-1loj34?v=843b594fde481694c14ac1fea53fbe95)](https://m8ven.ai/mcp/smaturus-1c-mcp-rag-search-1loj34?s=readme)
 
-Поисковый слой для выгрузки 1С, доступный LLM-агенту через **MCP**: находит нужную бизнес-логику по BSL-коду и по метаданным конфигурации, даже если точное имя неизвестно. Работает локально, без внешних API: данные не покидают машину.
+Поисковый слой для выгрузки 1С, доступный LLM-агенту через **MCP**: находит нужную бизнес-логику по BSL-коду и по метаданным конфигурации. Работает локально, без внешних API: данные не покидают машину.
 
-Внутри — гибридный retrieval с двумя независимыми сигналами: семантическим (e5-small + Chroma) и лексическим (собственный BM25), объединёнными через Reciprocal Rank Fusion. Качество измерено на собственном gold-set: `hybrid` — дефолт, потому что на dev-наборе он значимо лучше `vector`, а на независимом hold-out — не хуже.
+Внутри — гибридный retrieval с двумя независимыми сигналами: семантическим (e5-small + Chroma) и лексическим (собственный BM25), объединёнными через Reciprocal Rank Fusion. Качество измерено на собственном gold-set: `hybrid` — дефолт, потому что на dev-наборе он значимо лучше `vector`, а на независимом hold-out — не хуже. Дополнительно включён source-dedup: не более 2 чанков из одного файла (`MAX_PER_SOURCE=2`, `MCP_1C_MAX_PER_SOURCE=0` отключает).
 
 | Показатель | Значение |
 | --- | --- |
 | Индекс | **179 586** чанков: 154 560 кода (нарезка по процедурам) + 25 026 метаданных (XML) |
 | Лексический индекс | глобальный BM25: 179 586 документов, 236 320 термов, **81 МБ** (`data/bm25_all`, локально) |
 | Качество, v2 dev (nDCG@10) | **hybrid 0.442 ± 0.012** против **vector 0.331 ± 0.028**; Δ = −0.112, CI [−0.184; −0.038], p = **0.0037** |
-| Качество, v3 hold-out | hybrid 0.217 ± 0.015, vector 0.208 ± 0.020; p = 0.635 — не хуже |
-| Латентность (CPU) | **50–105 мс** `vector`, **100–120 мс** `hybrid`, ~2,4 с `hybrid_rerank` |
-| Инженерные проверки | **74 unit-теста**, `ruff` — 0, `mypy` — 0 ошибок (22 модуля), гейт сложности, CI 3.11/3.12 |
+| Качество, v3 hold-out | hybrid 0.217 ± 0.015, vector 0.208 ± 0.020; p = 0.635 — не хуже (исторический расчёт на 71 code-запросе; текущий `--scope code` — 64) |
+| Diversity, v2/v3/v4 (nDCG@10 Δ) | **+0.028 / +0.003 / +0.012**; unique sources **5.86→7.37 / 6.72→7.97 / 5.21→7.47**; latency 48→54 мс (1.115×) |
+| Латентность (CPU) | **50–105 мс** `vector`, **100–120 мс** `hybrid`, ~2,4 с `hybrid_rerank`; с dedup — ~50–55 мс (same-process, без MCP round-trip) |
+| Инженерные проверки | **122 теста**, `ruff` — 0, `mypy` — 0 ошибок (25 source-файлов), гейт сложности, CI 3.11/3.12 |
 
 
 ## Задача
@@ -146,7 +147,9 @@ python -c "from mcp_1c_rag.search_modes import search; print(search('НДС с �
 
 Парный тест (n = 70): Δ nDCG@10 (`vector` − `hybrid`) = **−0.112**, CI **[−0.184; −0.038]**, p = **0.0037**, побед/ничьих/поражений — 22/22/26.
 
-**v3 hold-out, 71 code-запрос, 3 прогона:** `hybrid` 0.217 ± 0.015, `vector` 0.208 ± 0.020, `pearson` 0.229 ± 0.019, `lexical` 0.218; Δ = −0.0097, p = 0.635 — не значимо. **Метаданные:** XML-выгрузка (25 026 чанков) даёт BM25 Hit@3 **99,7 %** против 93,0 % у текстового отчёта.
+**v3 hold-out, 71 code-запрос (исторический расчёт; текущий `--scope code` — 64), 3 прогона:** `hybrid` 0.217 ± 0.015, `vector` 0.208 ± 0.020, `pearson` 0.229 ± 0.019, `lexical` 0.218; Δ = −0.0097, p = 0.635 — не значимо. **Метаданные:** XML-выгрузка (25 026 чанков) даёт BM25 Hit@3 **99,7 %** против 93,0 % у текстового отчёта.
+
+Source-dedup (live, 2026-11-06): `max_per_source=2` против `0`, pool=30, same-process harness. nDCG@10 Δ **+0.0275 / +0.0030 / +0.0119**; recall@10 Δ **+0.071 / +0.008 / +0.030**; unique_sources@10 **+1.51 / +1.25 / +2.26**; latency **48.1→53.6 мс** (1.115×). Детали — локальные заметки `data/local_notes/algo_glm5/final_decision.md` (в git не входят).
 
 Методика, латентность и разбивка по типам — [docs/EVALUATION.md](docs/EVALUATION.md). История чисел и отклонённые гипотезы — [docs/HISTORY.md](docs/HISTORY.md).
 
@@ -160,6 +163,7 @@ python -c "from mcp_1c_rag.search_modes import search; print(search('НДС с �
 | BM25 | собственный индекс (`bm25.py`), `k1=1.5`, `b=0.75` |
 | RRF | `k_rrf = 60` (`MCP_1C_RRF_K`) |
 | Дефолтный режим | `hybrid` (`MCP_1C_SEARCH_MODE`) |
+| Source diversity | `MAX_PER_SOURCE=2` (`MCP_1C_MAX_PER_SOURCE=0` отключает) |
 
 
 ## Подключение к клиенту
@@ -182,9 +186,9 @@ python -c "from mcp_1c_rag.search import codesearch, metadatasearch; print(codes
 ## Разработка и качество
 
 ```powershell
-pytest -q        # 74 unit-теста (ML-стек не требуется: импорты ленивые)
+pytest -q        # 122 теста (ML-стек не требуется: импорты ленивые)
 ruff check .     # линтер
-mypy             # типы (22 модуля)
+mypy             # типы (25 source-файлов)
 python scripts\check_complexity.py   # гейт сложности (radon)
 pytest -q --cov=src/mcp_1c_rag       # покрытие
 ```
@@ -197,16 +201,16 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + г�
 | Сложность (`radon`) | средняя ≤ 6, блоки > 20 только из baseline, MI ≥ 20 | **4.37 (A)**, 143 блока |
 | Baseline сложных функций | не расти, только сокращать | 2 записи: `evaluate_retrieval` (33), `index_metadata` (30) |
 | Покрытие | floor 25 %, цель 60 % | **≥ 25 %** |
-| Unit-тесты | не уменьшать | **74** |
+| Unit-тесты | не уменьшать | **122** |
 
 
 ## Структура
 
 ```
-src/mcp_1c_rag/      22 модуля: server, search_modes, bm25, rrf, rerank,
-                     router, chunking*, embeddings, store, metrics, index_guard
+src/mcp_1c_rag/      25 source-файлов: server, search_modes, bm25, rrf, rerank,
+                     router, chunking*, embeddings, store, metrics, index_guard, dedup
 scripts/             сборка индексов, eval, диагностика
-tests/               74 unit-теста
+tests/               122 теста
 docs/                ARCHITECTURE.md, EVALUATION.md, HISTORY.md, adr/
 data/eval/           gold-set и отчёты (индекс — data/eval/README.md)
 ```

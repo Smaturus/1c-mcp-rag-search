@@ -57,6 +57,9 @@ $env:MCP_1C_METADATA_XML_ROOT="D:\Study_XML"     # XML-выгрузка
 $env:MCP_1C_CHROMA_DIR="data\chroma_xml"          # код + метаданные
 $env:MCP_1C_BM25_DIR="data\bm25_all"              # глобальный BM25
 # опционально: $env:MCP_1C_SKIP_STARTUP_CHECK="1"  # пропустить проверку индекса при старте MCP
+# логи (только stderr): $env:MCP_1C_LOG_LEVEL="INFO"   # DEBUG|INFO|WARNING|ERROR
+#                       $env:MCP_1C_LOG_JSON="1"      # JSON-строки
+#                       $env:MCP_1C_LOG_QUERIES="1"   # opt-in: логировать текст запроса (default 0)
 
 python scripts\build_procedure_index.py --no-lock           # code_proc
 python scripts\parse_config_xml.py --root $env:MCP_1C_METADATA_XML_ROOT
@@ -76,7 +79,7 @@ python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir d
 | `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc`/`code`, `metadata_xml`/`metadata`, `all` (merge через `merge.merged_search`, нормализация `max` — ADR 0011) |
 | `evaluate_retrieval(query, k, …)` | Hit@k, Recall@k, MRR, nDCG по одному запросу |
 | `route_query(query)` | маршрут → `tool=search` + `mode` + `collection`, причина и уверенность |
-| `index_stats()` | какой индекс обслуживается: каталог, коллекции, размеры, дефолтный режим |
+| `index_stats()` | индекс (каталог, коллекции, размеры, режим) + readiness (`status`) и in-memory метрики (`requests_total`, `errors_total`, `latency_ms_*`); текст запросов не отдаёт |
 
 Примеры `search`:
 

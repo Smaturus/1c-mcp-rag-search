@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+import time
+
 from mcp.server.mcpserver import MCPServer
 
 from mcp_1c_rag import eval_retrieval as eval_mod
 from mcp_1c_rag import merge, search_modes
+from mcp_1c_rag import observability as obs
 from mcp_1c_rag import search as legacy_search
 from mcp_1c_rag.config import COLLECTION_METADATA, SEARCH_DEFAULT_MODE
 from mcp_1c_rag.formatting import format_candidates
@@ -50,6 +54,14 @@ def search(
     """
     key = (collection or "").strip().lower()
     chosen_mode = (mode or SEARCH_DEFAULT_MODE).strip().lower() or SEARCH_DEFAULT_MODE
+    coll_label = key or "default"
+    started = time.perf_counter()
+    request_id = obs.new_request_id()
+    privacy = obs.query_privacy_fields(query)
+    ok = True
+    error_type: str | None = None
+    result_count = 0
+    empty = False
     try:
         if key == "all":
             candidates = merge.merged_search(
@@ -62,17 +74,39 @@ def search(
                 mode=(mode or None),
                 collection=collection,
             )
+        result_count = len(candidates)
+        empty = result_count == 0
+        return format_candidates(candidates)
     except FileNotFoundError as exc:
+        ok = False
+        error_type = "FileNotFoundError"
         return (
             f"{exc}\n"
             "Подсказка: соберите BM25-индекс `python scripts/build_bm25.py` "
             "или используйте mode='vector'."
         )
     except IndexBusy as exc:
+        ok = False
+        error_type = "IndexBusy"
         return str(exc)
     except ValueError as exc:
+        ok = False
+        error_type = "ValueError"
         return f"{exc}"
-    return format_candidates(candidates)
+    finally:
+        obs.record_request(
+            "search",
+            latency_ms=obs.elapsed_ms(started),
+            ok=ok,
+            empty=empty,
+            error_type=error_type,
+            request_id=request_id,
+            mode=chosen_mode,
+            collection=coll_label,
+            top_k=max(1, int(top_k)),
+            result_count=result_count,
+            **privacy,
+        )
 
 
 @mcp.tool()
@@ -96,13 +130,34 @@ def evaluate_retrieval(
         relevant_sources: Comma-separated path needles; empty = use query as needle.
         null_pairs: Random background pairs for null-tail (0 skips; default 40).
     """
-    return eval_mod.evaluate_retrieval(
-        query=query,
-        k=k,
-        collection=collection,
-        relevant_sources=relevant_sources,
-        null_pairs=null_pairs,
-    )
+    started = time.perf_counter()
+    request_id = obs.new_request_id()
+    privacy = obs.query_privacy_fields(query)
+    ok = True
+    error_type: str | None = None
+    try:
+        return eval_mod.evaluate_retrieval(
+            query=query,
+            k=k,
+            collection=collection,
+            relevant_sources=relevant_sources,
+            null_pairs=null_pairs,
+        )
+    except Exception as exc:
+        ok = False
+        error_type = type(exc).__name__
+        raise
+    finally:
+        obs.record_request(
+            "evaluate_retrieval",
+            latency_ms=obs.elapsed_ms(started),
+            ok=ok,
+            error_type=error_type,
+            request_id=request_id,
+            collection=(collection or "").strip().lower() or "default",
+            top_k=max(1, int(k)),
+            **privacy,
+        )
 
 
 @mcp.tool()
@@ -116,15 +171,43 @@ def route_query(query: str) -> str:
     Args:
         query: The user question to classify.
     """
-    decision = route_decision(query)
-    return (
-        f"route={decision.route.value}\n"
-        f"tool={decision.tool}\n"
-        f"mode={decision.mode}\n"
-        f"collection={decision.collection}\n"
-        f"confidence={decision.confidence}\n"
-        f"reason={decision.reason}"
-    )
+    started = time.perf_counter()
+    request_id = obs.new_request_id()
+    privacy = obs.query_privacy_fields(query)
+    ok = True
+    error_type: str | None = None
+    route_name = ""
+    mode_name = ""
+    coll_name = ""
+    try:
+        decision = route_decision(query)
+        route_name = decision.route.value
+        mode_name = decision.mode
+        coll_name = decision.collection
+        return (
+            f"route={decision.route.value}\n"
+            f"tool={decision.tool}\n"
+            f"mode={decision.mode}\n"
+            f"collection={decision.collection}\n"
+            f"confidence={decision.confidence}\n"
+            f"reason={decision.reason}"
+        )
+    except Exception as exc:
+        ok = False
+        error_type = type(exc).__name__
+        raise
+    finally:
+        obs.record_request(
+            "route_query",
+            latency_ms=obs.elapsed_ms(started),
+            ok=ok,
+            error_type=error_type,
+            request_id=request_id,
+            route=route_name or None,
+            mode=mode_name or None,
+            collection=coll_name or None,
+            **privacy,
+        )
 
 
 @mcp.tool()
@@ -133,6 +216,7 @@ def index_stats() -> str:
 
     Useful before a demo or when results look unexpected: confirms the Chroma
     directory, collection sizes, BM25 index and the default search mode.
+    Also includes readiness status and in-memory request metrics (no query text).
     """
     from pathlib import Path
 
@@ -164,6 +248,7 @@ def index_stats() -> str:
         lines.append(f"chroma_error={type(exc).__name__}: {exc}")
     bm25_file = Path(BM25_DIR) / "index.npz"
     lines.append(f"bm25_index_present={bm25_file.exists()}")
+    lines.extend(obs.metrics_lines())
     return "\n".join(lines)
 
 
@@ -207,6 +292,11 @@ def main() -> None:
     """Entry point for stdio transport (Cursor mcp.json)."""
     import sys
 
+    from mcp_1c_rag.config import (
+        COLLECTION_CODE,
+        COLLECTION_METADATA,
+        SEARCH_DEFAULT_MODE,
+    )
     from mcp_1c_rag.startup import (
         RuntimeValidationError,
         format_validation_error,
@@ -214,7 +304,20 @@ def main() -> None:
         validate_runtime,
     )
 
+    obs.setup_logging()
     report = validate_runtime()
+    obs.set_startup_report(report)
+    obs.log_event(
+        "startup",
+        level=logging.INFO,
+        mode=SEARCH_DEFAULT_MODE,
+        collection_code=COLLECTION_CODE,
+        collection_metadata=COLLECTION_METADATA,
+        status=obs.startup_status(),
+        startup_skipped=report.skipped,
+        startup_errors=len(report.errors),
+        startup_warnings=len(report.warnings),
+    )
     if report.skipped:
         mcp.run(transport="stdio")
         return

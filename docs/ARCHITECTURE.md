@@ -82,6 +82,7 @@ flowchart TB
 | `models.py` | `Candidate` — лёгкая модель результата (без тяжёлых импортов) |
 | `eval_metrics.py` | метрики качества, чистые функции |
 | `server.py` | MCP-сервер и описания tools |
+| `observability.py` | stderr-only logging + in-memory метрики; health через `index_stats` / `health_snapshot` (без 5-го MCP tool) |
 | `index_guard.py` | запрет открывать индекс во время записи |
 
 ## 3. Потоки данных
@@ -122,7 +123,16 @@ markdown/JSON отчёт; парный тест `eval_paired.py` (bootstrap CI +
 `hybrid_rerank` — секунды (ONNX cross-encoder). BM25-индекс по 179 тыс. чанков
 занимает ~81 МБ на диске; это отдельный шаг сборки (`scripts/build_bm25.py`).
 
-## 6. Ограничения и риски
+## 6. Observability
+
+Логи только в **stderr** (stdout занят MCP stdio). Логгер `mcp_1c_rag`:
+`MCP_1C_LOG_LEVEL` (default `WARNING`), `MCP_1C_LOG_JSON=1` — JSON-строки,
+`MCP_1C_LOG_QUERIES=1` — opt-in на текст запроса (иначе `query_chars` /
+`query_hash`). Счётчики запросов/ошибок/latency — in-memory; готовность и
+метрики отдаёт расширенный `index_stats` (поля `status`, `requests_total`, …).
+Отдельного health-tool нет.
+
+## 7. Ограничения и риски
 
 1. **HNSW не персистится на диск** при `hnsw:sync_threshold=1000000` — это
    осознанная защита от [chroma#7090](https://github.com/chroma-core/chroma/issues/7090);
@@ -139,7 +149,7 @@ markdown/JSON отчёт; парный тест `eval_paired.py` (bootstrap CI +
 6. **Инкрементального обновления нет**: после изменения выгрузки индекс
    пересобирается целиком; прерванную сборку можно возобновить.
 
-## 7. Точки расширения
+## 8. Точки расширения
 
 - Новый сигнал ранжирования → функция в `search_modes.py` + список в `rrf_fuse`.
 - Другая reranker-модель → `MCP_1C_RERANK_MODEL` (flashrank), без правки кода.

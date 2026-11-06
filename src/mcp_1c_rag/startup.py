@@ -108,6 +108,260 @@ def _default_client(chroma_dir: Path) -> Any:
     return chromadb.PersistentClient(path=str(chroma_dir))
 
 
+def _check_search_mode(mode: str) -> list[ValidationIssue]:
+    """Валидировать MCP_1C_SEARCH_MODE."""
+    if mode in _VALID_MODES:
+        return []
+    return [
+        _issue(
+            "error",
+            "bad_search_mode",
+            "неизвестный MCP_1C_SEARCH_MODE",
+            actual=mode,
+            hint=(
+                "задайте MCP_1C_SEARCH_MODE=hybrid "
+                "(допустимо: lexical|vector|hybrid|hybrid_rerank|pearson)"
+            ),
+        )
+    ]
+
+
+def _check_chroma_path(chroma_path: Path) -> list[ValidationIssue]:
+    """Проверить каталог Chroma и наличие SQLite-файла."""
+    if not chroma_path.exists():
+        return [
+            _issue(
+                "error",
+                "chroma_missing",
+                "каталог Chroma не существует",
+                path=chroma_path,
+                actual="отсутствует",
+                hint=(
+                    "задайте MCP_1C_CHROMA_DIR=data/chroma_xml "
+                    "или соберите индекс (build_procedure_index / build_metadata_index)"
+                ),
+            )
+        ]
+    if not chroma_path.is_dir():
+        return [
+            _issue(
+                "error",
+                "chroma_not_dir",
+                "MCP_1C_CHROMA_DIR указывает не на каталог",
+                path=chroma_path,
+                actual="не каталог",
+                hint="задайте путь к каталогу Chroma, например data/chroma_xml",
+            )
+        ]
+
+    issues: list[ValidationIssue] = []
+    if not any(chroma_path.iterdir()):
+        issues.append(
+            _issue(
+                "error",
+                "chroma_empty",
+                "каталог Chroma пуст",
+                path=chroma_path,
+                actual="0 файлов",
+                hint=(
+                    "задайте MCP_1C_CHROMA_DIR=data/chroma_xml "
+                    "или пересоберите индекс"
+                ),
+            )
+        )
+    sqlite_path = chroma_path / "chroma.sqlite3"
+    if not sqlite_path.is_file():
+        issues.append(
+            _issue(
+                "error",
+                "chroma_sqlite_missing",
+                "в каталоге Chroma нет chroma.sqlite3",
+                path=sqlite_path,
+                actual="файл не найден",
+                hint=(
+                    "проверьте MCP_1C_CHROMA_DIR "
+                    "(ожидается data/chroma_xml с chroma.sqlite3)"
+                ),
+            )
+        )
+    return issues
+
+
+def _check_collections(
+    client: Any,
+    code_name: str,
+    meta_name: str,
+    chroma_path: Path,
+) -> list[ValidationIssue]:
+    """Проверить code/metadata-коллекции через уже открытый клиент."""
+    issues: list[ValidationIssue] = []
+    try:
+        code_coll = client.get_collection(code_name)
+        code_count = int(code_coll.count())
+    except Exception as exc:  # noqa: BLE001
+        issues.append(
+            _issue(
+                "error",
+                "code_collection_missing",
+                f"коллекция кода {code_name!r} недоступна",
+                path=chroma_path,
+                actual=f"{type(exc).__name__}: {exc}",
+                hint=(
+                    f"соберите индекс: python scripts/build_procedure_index.py "
+                    f"(коллекция {code_name}) или "
+                    f"MCP_1C_CODE_COLLECTION={code_name}"
+                ),
+            )
+        )
+    else:
+        if code_count <= 0:
+            issues.append(
+                _issue(
+                    "error",
+                    "code_collection_empty",
+                    f"коллекция кода {code_name!r} пуста",
+                    path=chroma_path,
+                    actual=f"count={code_count}",
+                    hint=(
+                        "пересоберите индекс: "
+                        "python scripts/build_procedure_index.py"
+                    ),
+                )
+            )
+
+    try:
+        meta_coll = client.get_collection(meta_name)
+        meta_count = int(meta_coll.count())
+    except Exception as exc:  # noqa: BLE001
+        issues.append(
+            _issue(
+                "warning",
+                "metadata_collection_missing",
+                f"коллекция метаданных {meta_name!r} недоступна",
+                path=chroma_path,
+                actual=f"{type(exc).__name__}: {exc}",
+                hint=(
+                    "metadata-инструменты будут пустыми; "
+                    "соберите: python scripts/build_metadata_index.py "
+                    f"или задайте MCP_1C_METADATA_COLLECTION={meta_name}"
+                ),
+            )
+        )
+    else:
+        if meta_count <= 0:
+            issues.append(
+                _issue(
+                    "warning",
+                    "metadata_collection_empty",
+                    f"коллекция метаданных {meta_name!r} пуста",
+                    path=chroma_path,
+                    actual=f"count={meta_count}",
+                    hint=(
+                        "metadata-инструменты будут пустыми; "
+                        "python scripts/build_metadata_index.py"
+                    ),
+                )
+            )
+    return issues
+
+
+def _check_chroma(
+    chroma_path: Path,
+    code_name: str,
+    meta_name: str,
+    factory: Callable[[Path], Any],
+) -> list[ValidationIssue]:
+    """Проверить Chroma и коллекции; не вызывать get_or_create."""
+    issues = _check_chroma_path(chroma_path)
+    if any(issue.code in {"chroma_missing", "chroma_not_dir"} for issue in issues):
+        return issues
+    sqlite_path = chroma_path / "chroma.sqlite3"
+    if not sqlite_path.is_file() or not any(chroma_path.iterdir()):
+        return issues
+
+    try:
+        client = factory(chroma_path)
+    except Exception as exc:  # noqa: BLE001 — диагностика старта
+        issues.append(
+            _issue(
+                "error",
+                "chroma_open_failed",
+                "не удалось открыть Chroma PersistentClient",
+                path=chroma_path,
+                actual=f"{type(exc).__name__}: {exc}",
+                hint="проверьте MCP_1C_CHROMA_DIR и права доступа",
+            )
+        )
+        return issues
+    issues.extend(_check_collections(client, code_name, meta_name, chroma_path))
+    return issues
+
+
+def _check_bm25(bm25_path: Path) -> list[ValidationIssue]:
+    """Проверить наличие и непустоту BM25-индекса."""
+    issues: list[ValidationIssue] = []
+    index_npz = bm25_path / "index.npz"
+    meta_json = bm25_path / "meta.json"
+    if not index_npz.is_file():
+        issues.append(
+            _issue(
+                "error",
+                "bm25_index_missing",
+                "BM25 index.npz не найден",
+                path=index_npz,
+                actual="файл не найден",
+                hint=(
+                    "задайте MCP_1C_BM25_DIR=data/bm25_all или соберите: "
+                    "python scripts/build_bm25.py --chroma-dir data/chroma_xml "
+                    "--out data/bm25_all"
+                ),
+            )
+        )
+    if not meta_json.is_file():
+        issues.append(
+            _issue(
+                "error",
+                "bm25_meta_missing",
+                "BM25 meta.json не найден",
+                path=meta_json,
+                actual="файл не найден",
+                hint=(
+                    "задайте MCP_1C_BM25_DIR=data/bm25_all или пересоберите BM25 "
+                    "(scripts/build_bm25.py)"
+                ),
+            )
+        )
+        return issues
+
+    n_docs = _read_bm25_n_docs(meta_json)
+    if n_docs is None:
+        issues.append(
+            _issue(
+                "error",
+                "bm25_meta_invalid",
+                "BM25 meta.json не читается или без n_docs",
+                path=meta_json,
+                actual="parse_error",
+                hint="пересоберите BM25: python scripts/build_bm25.py",
+            )
+        )
+    elif n_docs <= 0:
+        issues.append(
+            _issue(
+                "error",
+                "bm25_empty",
+                "BM25 индекс пуст (n_docs=0)",
+                path=meta_json,
+                actual=f"n_docs={n_docs}",
+                hint=(
+                    "пересоберите BM25 после индексации Chroma: "
+                    "python scripts/build_bm25.py"
+                ),
+            )
+        )
+    return issues
+
+
 def validate_runtime(
     *,
     chroma_dir: Path | None = None,
@@ -152,218 +406,9 @@ def validate_runtime(
     factory = client_factory or _default_client
 
     issues: list[ValidationIssue] = []
-
-    if mode not in _VALID_MODES:
-        issues.append(
-            _issue(
-                "error",
-                "bad_search_mode",
-                "неизвестный MCP_1C_SEARCH_MODE",
-                actual=mode,
-                hint=(
-                    "задайте MCP_1C_SEARCH_MODE=hybrid "
-                    "(допустимо: lexical|vector|hybrid|hybrid_rerank|pearson)"
-                ),
-            )
-        )
-
-    if not chroma_path.exists():
-        issues.append(
-            _issue(
-                "error",
-                "chroma_missing",
-                "каталог Chroma не существует",
-                path=chroma_path,
-                actual="отсутствует",
-                hint=(
-                    "задайте MCP_1C_CHROMA_DIR=data/chroma_xml "
-                    "или соберите индекс (build_procedure_index / build_metadata_index)"
-                ),
-            )
-        )
-    elif not chroma_path.is_dir():
-        issues.append(
-            _issue(
-                "error",
-                "chroma_not_dir",
-                "MCP_1C_CHROMA_DIR указывает не на каталог",
-                path=chroma_path,
-                actual="не каталог",
-                hint="задайте путь к каталогу Chroma, например data/chroma_xml",
-            )
-        )
-    else:
-        entries = list(chroma_path.iterdir())
-        sqlite_path = chroma_path / "chroma.sqlite3"
-        if not entries:
-            issues.append(
-                _issue(
-                    "error",
-                    "chroma_empty",
-                    "каталог Chroma пуст",
-                    path=chroma_path,
-                    actual="0 файлов",
-                    hint=(
-                        "задайте MCP_1C_CHROMA_DIR=data/chroma_xml "
-                        "или пересоберите индекс"
-                    ),
-                )
-            )
-        if not sqlite_path.is_file():
-            issues.append(
-                _issue(
-                    "error",
-                    "chroma_sqlite_missing",
-                    "в каталоге Chroma нет chroma.sqlite3",
-                    path=sqlite_path,
-                    actual="файл не найден",
-                    hint=(
-                        "проверьте MCP_1C_CHROMA_DIR "
-                        "(ожидается data/chroma_xml с chroma.sqlite3)"
-                    ),
-                )
-            )
-        elif sqlite_path.is_file() and entries:
-            try:
-                client = factory(chroma_path)
-            except Exception as exc:  # noqa: BLE001 — диагностика старта
-                issues.append(
-                    _issue(
-                        "error",
-                        "chroma_open_failed",
-                        "не удалось открыть Chroma PersistentClient",
-                        path=chroma_path,
-                        actual=f"{type(exc).__name__}: {exc}",
-                        hint="проверьте MCP_1C_CHROMA_DIR и права доступа",
-                    )
-                )
-            else:
-                try:
-                    code_coll = client.get_collection(code_name)
-                    code_count = int(code_coll.count())
-                except Exception as exc:  # noqa: BLE001
-                    issues.append(
-                        _issue(
-                            "error",
-                            "code_collection_missing",
-                            f"коллекция кода {code_name!r} недоступна",
-                            path=chroma_path,
-                            actual=f"{type(exc).__name__}: {exc}",
-                            hint=(
-                                f"соберите индекс: python scripts/build_procedure_index.py "
-                                f"(коллекция {code_name}) или "
-                                f"MCP_1C_CODE_COLLECTION={code_name}"
-                            ),
-                        )
-                    )
-                else:
-                    if code_count <= 0:
-                        issues.append(
-                            _issue(
-                                "error",
-                                "code_collection_empty",
-                                f"коллекция кода {code_name!r} пуста",
-                                path=chroma_path,
-                                actual=f"count={code_count}",
-                                hint=(
-                                    "пересоберите индекс: "
-                                    "python scripts/build_procedure_index.py"
-                                ),
-                            )
-                        )
-                try:
-                    meta_coll = client.get_collection(meta_name)
-                    meta_count = int(meta_coll.count())
-                except Exception as exc:  # noqa: BLE001
-                    issues.append(
-                        _issue(
-                            "warning",
-                            "metadata_collection_missing",
-                            f"коллекция метаданных {meta_name!r} недоступна",
-                            path=chroma_path,
-                            actual=f"{type(exc).__name__}: {exc}",
-                            hint=(
-                                "metadata-инструменты будут пустыми; "
-                                "соберите: python scripts/build_metadata_index.py "
-                                f"или задайте MCP_1C_METADATA_COLLECTION={meta_name}"
-                            ),
-                        )
-                    )
-                else:
-                    if meta_count <= 0:
-                        issues.append(
-                            _issue(
-                                "warning",
-                                "metadata_collection_empty",
-                                f"коллекция метаданных {meta_name!r} пуста",
-                                path=chroma_path,
-                                actual=f"count={meta_count}",
-                                hint=(
-                                    "metadata-инструменты будут пустыми; "
-                                    "python scripts/build_metadata_index.py"
-                                ),
-                            )
-                        )
-
-    index_npz = bm25_path / "index.npz"
-    meta_json = bm25_path / "meta.json"
-    if not index_npz.is_file():
-        issues.append(
-            _issue(
-                "error",
-                "bm25_index_missing",
-                "BM25 index.npz не найден",
-                path=index_npz,
-                actual="файл не найден",
-                hint=(
-                    "задайте MCP_1C_BM25_DIR=data/bm25_all или соберите: "
-                    "python scripts/build_bm25.py --chroma-dir data/chroma_xml "
-                    "--out data/bm25_all"
-                ),
-            )
-        )
-    if not meta_json.is_file():
-        issues.append(
-            _issue(
-                "error",
-                "bm25_meta_missing",
-                "BM25 meta.json не найден",
-                path=meta_json,
-                actual="файл не найден",
-                hint=(
-                    "задайте MCP_1C_BM25_DIR=data/bm25_all или пересоберите BM25 "
-                    "(scripts/build_bm25.py)"
-                ),
-            )
-        )
-    else:
-        n_docs = _read_bm25_n_docs(meta_json)
-        if n_docs is None:
-            issues.append(
-                _issue(
-                    "error",
-                    "bm25_meta_invalid",
-                    "BM25 meta.json не читается или без n_docs",
-                    path=meta_json,
-                    actual="parse_error",
-                    hint="пересоберите BM25: python scripts/build_bm25.py",
-                )
-            )
-        elif n_docs <= 0:
-            issues.append(
-                _issue(
-                    "error",
-                    "bm25_empty",
-                    "BM25 индекс пуст (n_docs=0)",
-                    path=meta_json,
-                    actual=f"n_docs={n_docs}",
-                    hint=(
-                        "пересоберите BM25 после индексации Chroma: "
-                        "python scripts/build_bm25.py"
-                    ),
-                )
-            )
-
+    issues.extend(_check_search_mode(mode))
+    issues.extend(_check_chroma(chroma_path, code_name, meta_name, factory))
+    issues.extend(_check_bm25(bm25_path))
     return ValidationReport(issues=issues, skipped=False)
 
 

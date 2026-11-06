@@ -20,10 +20,10 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
+from mcp_1c_rag.collections import all_specs, canonical_name, id_prefix
 from mcp_1c_rag.config import (
     BM25_DIR,
     COLLECTION_CODE,
-    COLLECTION_METADATA,
     HYBRID_TOP_K,
     MAX_PER_SOURCE,
     RERANK_CANDIDATES,
@@ -42,16 +42,8 @@ SearchMode = Literal["vector", "hybrid", "hybrid_rerank", "pearson"]
 # Стартовый пул для source-dedup: top_k * DEDUP_START_MULTIPLIER, затем ×2.
 DEDUP_START_MULTIPLIER = DEFAULT_START_MULTIPLIER
 
-# Префикс chroma-id для каждой коллекции (задаётся индексатором).
-_ID_PREFIX = {
-    "code": "bsl:",
-    "metadata": "meta:",
-    "metadata_xml": "metaobj:",
-    "code_proc": "bsl_proc:",
-    "config_xml": "xml:",
-}
-_ID_PREFIX.setdefault(COLLECTION_CODE, "bsl_proc:")
-_ID_PREFIX.setdefault(COLLECTION_METADATA, "metaobj:")
+# Префикс chroma-id для каждой коллекции (из registry; без ручных значений).
+_ID_PREFIX = {spec.name: spec.id_prefix for spec in all_specs()}
 
 
 _bm25: Bm25Index | None = None
@@ -59,19 +51,17 @@ _masks: dict[str, np.ndarray] = {}
 _collection_counts: dict[str, int] = {}
 
 
-def get_collection(name: str = "code"):
-    """Вернуть Chroma-коллекцию по имени (``code``/``metadata`` и любые новые)."""
+def get_collection(name: str | None = None):
+    """Вернуть Chroma-коллекцию по каноническому имени (aliases резолвятся)."""
     from mcp_1c_rag.store import get_collection as store_get_collection
 
-    key = (name or "code").strip()
-    if key.lower() in ("meta", "metadata"):
-        key = "metadata"
-    return store_get_collection(key)
+    canonical = canonical_name(name or COLLECTION_CODE)
+    return store_get_collection(canonical)
 
 
-def _collection_count(name: str) -> int:
-    """Count коллекции с кэшем на процесс (индекс неизменен в runtime)."""
-    key = (name or "code").strip()
+def _collection_count(name: str | None = None) -> int:
+    """Count коллекции с кэшем на процесс (ключ — canonical)."""
+    key = canonical_name(name or COLLECTION_CODE)
     if key not in _collection_counts:
         _collection_counts[key] = int(get_collection(key).count())
     return _collection_counts[key]
@@ -111,9 +101,9 @@ def _prefix_mask(index: Bm25Index, prefix: str) -> np.ndarray:
 
 def _masked_bm25_scores(query: str, collection: str) -> np.ndarray:
     """BM25-скоры с prefix-mask коллекции (один раз на запрос)."""
+    prefix = id_prefix(collection)
     index = get_bm25()
     scores = index.scores(query)
-    prefix = _ID_PREFIX.get(collection, "")
     if prefix:
         scores = np.where(_prefix_mask(index, prefix), scores, -np.inf)
     return scores

@@ -5,6 +5,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from mcp_1c_rag.collections import (
+    DEFAULT_CODE_COLLECTION,
+    DEFAULT_METADATA_COLLECTION,
+    canonical_name,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 STUDY_ROOT = Path(
@@ -25,8 +31,12 @@ EMBEDDING_MODEL = os.environ.get(
     "MCP_1C_EMBEDDING_MODEL", "intfloat/multilingual-e5-small"
 )
 
-COLLECTION_CODE = os.environ.get("MCP_1C_CODE_COLLECTION", "code")
-COLLECTION_METADATA = os.environ.get("MCP_1C_METADATA_COLLECTION", "metadata")
+COLLECTION_CODE = canonical_name(
+    os.environ.get("MCP_1C_CODE_COLLECTION", DEFAULT_CODE_COLLECTION)
+)
+COLLECTION_METADATA = canonical_name(
+    os.environ.get("MCP_1C_METADATA_COLLECTION", DEFAULT_METADATA_COLLECTION)
+)
 
 # Chunking defaults
 BSL_CHUNK_CHARS = int(os.environ.get("MCP_1C_BSL_CHUNK_CHARS", "1200"))

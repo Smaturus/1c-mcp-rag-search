@@ -18,6 +18,8 @@ mcp = MCPServer(
     instructions=(
         "1C retrieval MCP: semantic + lexical search over BSL code and "
         "configuration metadata. "
+        "Default collections: code_proc (BSL procedures) and metadata_xml "
+        "(XML metadata); legacy aliases code/metadata still resolve. "
         "Tools: codesearch, metadatasearch (cosine baseline), "
         "search(query, top_k, mode, collection) with modes vector | hybrid (RRF) "
         "| hybrid_rerank | pearson, and evaluate_retrieval for quality metrics "
@@ -65,7 +67,8 @@ def evaluate_retrieval(
     Args:
         query: Query to evaluate, e.g. НДС or ПередЗаписью.
         k: Top-k cutoff (default 5).
-        collection: code (BSL) or metadata (configuration report).
+        collection: code_proc (BSL) or metadata_xml (XML metadata);
+            legacy aliases code/metadata still work.
         relevant_sources: Comma-separated path needles; empty = use query as needle.
         null_pairs: Random background pairs for null-tail (0 skips; default 40).
     """
@@ -96,7 +99,8 @@ def search(
         top_k: How many results to return (default 5).
         mode: lexical | vector | hybrid | hybrid_rerank | pearson;
             empty = server default.
-        collection: code (BSL) or metadata (configuration report).
+        collection: code_proc (BSL) or metadata_xml (XML metadata);
+            legacy aliases code/metadata; empty = server default.
     """
     try:
         candidates = search_modes.search(
@@ -244,13 +248,14 @@ def index_stats() -> str:
         f"default_mode={SEARCH_DEFAULT_MODE}",
     ]
     try:
+        from mcp_1c_rag.collections import all_specs
         from mcp_1c_rag.store import get_client
 
         client = get_client()
-        for name in ("code_proc", "metadata_xml", "code", "metadata"):
+        for spec in all_specs():
             try:
-                collection = client.get_collection(name)
-                lines.append(f"collection[{name}]={collection.count()}")
+                collection = client.get_collection(spec.name)
+                lines.append(f"collection[{spec.name}]={collection.count()}")
             except Exception:
                 continue
     except Exception as exc:  # noqa: BLE001

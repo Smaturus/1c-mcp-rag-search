@@ -30,13 +30,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Unit tests cover BM25, RRF, reranker wrapper and metrics — they do not
-      # need the ML stack (chromadb / sentence-transformers / flashrank are
-      # imported lazily), so CI stays fast and dependency-light.
+      # Unit tests cover BM25, RRF, reranker wrapper, metrics and the MCP tool
+      # surface. The ML stack (sentence-transformers / flashrank) stays lazy;
+      # CI needs only the MCP SDK and Chroma for server-level tests.
       - name: Install light dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy scipy pytest pytest-cov ruff mypy radon
+          pip install numpy scipy mcp chromadb pytest pytest-cov ruff mypy radon
 
       - name: Lint (ruff)
         run: ruff check .

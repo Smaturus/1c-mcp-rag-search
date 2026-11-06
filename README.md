@@ -56,6 +56,7 @@ $env:MCP_1C_STUDY_ROOT="D:\Study"                 # дерево .bsl
 $env:MCP_1C_METADATA_XML_ROOT="D:\Study_XML"     # XML-выгрузка
 $env:MCP_1C_CHROMA_DIR="data\chroma_xml"          # код + метаданные
 $env:MCP_1C_BM25_DIR="data\bm25_all"              # глобальный BM25
+# опционально: $env:MCP_1C_SKIP_STARTUP_CHECK="1"  # пропустить проверку индекса при старте MCP
 
 python scripts\build_procedure_index.py --no-lock           # code_proc
 python scripts\parse_config_xml.py --root $env:MCP_1C_METADATA_XML_ROOT

@@ -267,6 +267,29 @@ def index_stats() -> str:
 
 def main() -> None:
     """Entry point for stdio transport (Cursor mcp.json)."""
+    import sys
+
+    from mcp_1c_rag.startup import (
+        RuntimeValidationError,
+        format_validation_error,
+        format_validation_warnings,
+        validate_runtime,
+    )
+
+    report = validate_runtime()
+    if report.skipped:
+        mcp.run(transport="stdio")
+        return
+    if report.errors:
+        print(
+            format_validation_error(
+                RuntimeValidationError(report.errors, report.warnings)
+            ),
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    if report.warnings:
+        print(format_validation_warnings(report), file=sys.stderr)
     mcp.run(transport="stdio")
 
 

@@ -51,6 +51,19 @@ jobs:
         run: python scripts/check_complexity.py
 
       - name: Unit tests (pytest + coverage)
-        run: pytest -q --cov=src/mcp_1c_rag --cov-report=term-missing --cov-fail-under=25
+        shell: bash
+        run: |
+          set +e
+          pytest -q --cov=src/mcp_1c_rag --cov-report=term-missing --cov-fail-under=25 2>&1 | tee pytest.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo "## pytest failure"
+              echo '```'
+              tail -n 150 pytest.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
         env:
           PYTHONPATH: src

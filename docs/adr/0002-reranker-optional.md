@@ -35,3 +35,12 @@
   точных запросов. Параметры (`MCP_1C_RERANK_*`) — в `config.py`.
 - Возможное развитие: модель, предобученная на коде, либо fine-tune на парах
   «запрос → чанк» из gold-set.
+
+## Update 2026-11-06: mmarco поверх live-dedup
+
+Проверена замена на мультиязычный `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`.
+На пуле top-20 без dedup он выглядел лучше hybrid, но в честном сравнении с
+`hybrid + MAX_PER_SOURCE=2` (prefix top-10 ≡ live, POOL=10) дал:
+v2 +0.072, v3 +0.082, **v4 +0.003 (CI включает 0)**, e2e ~0.9–3.2 с.
+Решение: mmarco поверх live-dedup **не внедрять**; P2.2 (ONNX) не открывать
+как путь в live. Детали — [HISTORY](../HISTORY.md#9-rerank-2-multibert-и-mmarco-p0p21).

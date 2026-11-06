@@ -68,6 +68,7 @@ def test_tmp_path_without_chroma_sqlite(tmp_path: Path) -> None:
         bm25_dir=bm25,
         search_default_mode="hybrid",
         client_factory=lambda _p: (_ for _ in ()).throw(AssertionError("no client")),
+        check_manifest=False,
     )
     assert report.errors
     assert any(i.code == "chroma_sqlite_missing" for i in report.errors)
@@ -84,6 +85,7 @@ def test_empty_chroma_dir(tmp_path: Path) -> None:
         bm25_dir=bm25,
         search_default_mode="hybrid",
         client_factory=lambda _p: (_ for _ in ()).throw(AssertionError("no client")),
+        check_manifest=False,
     )
     codes = {i.code for i in report.errors}
     assert "chroma_empty" in codes
@@ -104,6 +106,7 @@ def test_missing_bm25(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="hybrid",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     codes = {i.code for i in report.errors}
     assert "bm25_index_missing" in codes
@@ -124,6 +127,7 @@ def test_bm25_n_docs_zero(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="hybrid",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     assert any(i.code == "bm25_empty" for i in report.errors)
 
@@ -142,6 +146,7 @@ def test_code_collection_empty_is_error(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="hybrid",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     assert any(i.code == "code_collection_empty" for i in report.errors)
     assert any(i.code == "metadata_collection_empty" for i in report.warnings)
@@ -162,6 +167,7 @@ def test_metadata_missing_is_warning(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="hybrid",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     assert not any(i.code.startswith("code_") for i in report.errors)
     assert any(i.code == "metadata_collection_missing" for i in report.warnings)
@@ -184,6 +190,7 @@ def test_skip_startup_check(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
         chroma_dir=tmp_path / "missing",
         bm25_dir=tmp_path / "missing_bm25",
         client_factory=factory,
+        check_manifest=False,
     )
     assert report.skipped is True
     assert report.issues == []
@@ -204,6 +211,7 @@ def test_bad_search_mode(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="nope",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     assert any(i.code == "bad_search_mode" for i in report.errors)
 
@@ -222,6 +230,7 @@ def test_ok_report(tmp_path: Path) -> None:
         metadata_collection="metadata_xml",
         search_default_mode="hybrid",
         client_factory=lambda _p: client,
+        check_manifest=False,
     )
     assert report.skipped is False
     assert report.errors == []
@@ -239,6 +248,7 @@ def test_format_validation_error_actionable(tmp_path: Path) -> None:
         bm25_dir=bm25,
         search_default_mode="hybrid",
         client_factory=lambda _p: (_ for _ in ()).throw(AssertionError("no")),
+        check_manifest=False,
     )
     text = format_validation_error(
         RuntimeValidationError(report.errors, report.warnings)
@@ -351,3 +361,132 @@ def test_main_unknown_collection_no_traceback() -> None:
     assert result.returncode == 2
     assert "Traceback" not in (result.stderr or "")
     assert "no_such_collection_xyz" in (result.stderr or "")
+
+
+def _write_chroma_sqlite(chroma_dir: Path, collections: dict[str, list[str]]) -> None:
+    import sqlite3
+
+    chroma_dir.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(chroma_dir / "chroma.sqlite3")
+    db.executescript(
+        """
+        CREATE TABLE collections (id TEXT PRIMARY KEY, name TEXT);
+        CREATE TABLE segments (id TEXT PRIMARY KEY, type TEXT, scope TEXT, collection TEXT);
+        CREATE TABLE embeddings (
+            id INTEGER PRIMARY KEY, segment_id TEXT, embedding_id TEXT,
+            seq_id BLOB DEFAULT X'00'
+        );
+        """
+    )
+    eid = 1
+    for name, ids in collections.items():
+        cid, sid = f"c-{name}", f"s-{name}"
+        db.execute("INSERT INTO collections (id, name) VALUES (?, ?)", (cid, name))
+        db.execute(
+            "INSERT INTO segments (id, type, scope, collection) VALUES (?, ?, ?, ?)",
+            (sid, "urn:chroma:segment/metadata/sqlite", "VECTOR", cid),
+        )
+        for emb_id in ids:
+            db.execute(
+                "INSERT INTO embeddings (id, segment_id, embedding_id) VALUES (?, ?, ?)",
+                (eid, sid, emb_id),
+            )
+            eid += 1
+    db.commit()
+    db.close()
+
+
+def test_manifest_missing_is_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    chroma = tmp_path / "chroma"
+    _write_chroma_sqlite(chroma, {"code_proc": ["bsl_proc:1"], "metadata_xml": ["metaobj:1"]})
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25, n_docs=2)
+    client = _FakeClient({"code_proc": 1, "metadata_xml": 1})
+    monkeypatch.setattr(
+        "mcp_1c_rag.config.EMBEDDING_MODEL", "intfloat/multilingual-e5-small"
+    )
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: client,
+        manifest_path=tmp_path / "missing_manifest.json",
+        check_manifest=True,
+    )
+    assert report.errors == []
+    assert any(i.code == "manifest_missing" for i in report.warnings)
+
+
+def test_manifest_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from mcp_1c_rag.manifest import collect_manifest, write_manifest
+
+    chroma = tmp_path / "chroma"
+    _write_chroma_sqlite(chroma, {"code_proc": ["bsl_proc:1"], "metadata_xml": ["metaobj:1"]})
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25, n_docs=2)
+    # align bm25 meta doc_ids count with n_docs for collect
+    meta = json.loads((bm25 / "meta.json").read_text(encoding="utf-8"))
+    meta["doc_ids"] = ["bsl_proc:1", "metaobj:1"]
+    meta["vocab"] = {"a": 0}
+    (bm25 / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+    model = "intfloat/multilingual-e5-small"
+    monkeypatch.setattr("mcp_1c_rag.config.EMBEDDING_MODEL", model)
+    data = collect_manifest(
+        chroma,
+        bm25,
+        collections=["code_proc", "metadata_xml"],
+        embedding_model=model,
+    )
+    man_path = tmp_path / "manifest.json"
+    write_manifest(man_path, data)
+    client = _FakeClient({"code_proc": 1, "metadata_xml": 1})
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: client,
+        manifest_path=man_path,
+        check_manifest=True,
+    )
+    assert report.errors == []
+    assert not any(i.code.startswith("manifest_") for i in report.warnings)
+
+
+def test_manifest_count_mismatch_is_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from mcp_1c_rag.manifest import IndexManifest, collect_manifest, write_manifest
+
+    chroma = tmp_path / "chroma"
+    _write_chroma_sqlite(chroma, {"code_proc": ["bsl_proc:1"], "metadata_xml": ["metaobj:1"]})
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25, n_docs=2)
+    meta = json.loads((bm25 / "meta.json").read_text(encoding="utf-8"))
+    meta["doc_ids"] = ["bsl_proc:1", "metaobj:1"]
+    meta["vocab"] = {"a": 0}
+    (bm25 / "meta.json").write_text(json.dumps(meta), encoding="utf-8")
+    model = "intfloat/multilingual-e5-small"
+    monkeypatch.setattr("mcp_1c_rag.config.EMBEDDING_MODEL", model)
+    data = collect_manifest(
+        chroma, bm25, collections=["code_proc", "metadata_xml"], embedding_model=model
+    )
+    man = IndexManifest.from_dict(data)
+    man.collections["code_proc"].count = 999
+    man_path = tmp_path / "manifest.json"
+    write_manifest(man_path, man)
+    client = _FakeClient({"code_proc": 1, "metadata_xml": 1})
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: client,
+        manifest_path=man_path,
+        check_manifest=True,
+    )
+    assert any(i.code == "manifest_count_mismatch" for i in report.errors)

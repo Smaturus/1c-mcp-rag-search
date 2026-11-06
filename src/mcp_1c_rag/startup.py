@@ -362,6 +362,53 @@ def _check_bm25(bm25_path: Path) -> list[ValidationIssue]:
     return issues
 
 
+def _check_manifest(
+    *,
+    manifest_path: Path,
+    chroma_path: Path,
+    bm25_path: Path,
+    embedding_model: str,
+) -> list[ValidationIssue]:
+    """Сверить индекс-манифест (быстрый путь: counts/model/bm25, без fingerprint)."""
+    if not manifest_path.is_file():
+        return [
+            _issue(
+                "warning",
+                "manifest_missing",
+                "индекс-манифест не найден",
+                path=manifest_path,
+                actual="отсутствует",
+                hint=(
+                    "соберите: python scripts/build_manifest.py "
+                    "--chroma-dir data/chroma_xml --bm25-dir data/bm25_all "
+                    f"--out {manifest_path.as_posix()}"
+                ),
+            )
+        ]
+    from mcp_1c_rag.manifest import load_manifest, validate_manifest
+
+    try:
+        manifest = load_manifest(manifest_path)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        return [
+            _issue(
+                "error",
+                "manifest_invalid",
+                "индекс-манифест не читается",
+                path=manifest_path,
+                actual=f"{type(exc).__name__}: {exc}",
+                hint="пересоберите python scripts/build_manifest.py",
+            )
+        ]
+    return validate_manifest(
+        manifest,
+        chroma_dir=chroma_path,
+        bm25_dir=bm25_path,
+        embedding_model=embedding_model,
+        check_fingerprints=False,
+    )
+
+
 def validate_runtime(
     *,
     chroma_dir: Path | None = None,
@@ -371,11 +418,16 @@ def validate_runtime(
     search_default_mode: str | None = None,
     skip: bool | None = None,
     client_factory: Callable[[Path], Any] | None = None,
+    manifest_path: Path | None = None,
+    check_manifest: bool = True,
 ) -> ValidationReport:
-    """Проверить пути индекса, BM25, коллекции и дефолтный режим.
+    """Проверить пути индекса, BM25, коллекции, дефолтный режим и манифест.
 
     Не загружает embedding-модель и не вызывает ``get_or_create_collection``.
     При ``MCP_1C_SKIP_STARTUP_CHECK=1`` возвращает ``skipped=True`` без I/O.
+    Манифест: отсутствующий файл → warning; mismatch counts/model/bm25 → error.
+    Fingerprint на старте не пересчитывается (ADR 0012).
+    ``check_manifest=False`` — только для unit-тестов старого контура.
     """
     if skip is None:
         skip = _env_truthy(_SKIP_ENV)
@@ -387,6 +439,8 @@ def validate_runtime(
         CHROMA_DIR,
         COLLECTION_CODE,
         COLLECTION_METADATA,
+        EMBEDDING_MODEL,
+        MANIFEST_PATH,
         SEARCH_DEFAULT_MODE,
     )
 
@@ -404,11 +458,21 @@ def validate_runtime(
         else SEARCH_DEFAULT_MODE
     ).strip().lower()
     factory = client_factory or _default_client
+    man_path = Path(manifest_path) if manifest_path is not None else Path(MANIFEST_PATH)
 
     issues: list[ValidationIssue] = []
     issues.extend(_check_search_mode(mode))
     issues.extend(_check_chroma(chroma_path, code_name, meta_name, factory))
     issues.extend(_check_bm25(bm25_path))
+    if check_manifest:
+        issues.extend(
+            _check_manifest(
+                manifest_path=man_path,
+                chroma_path=chroma_path,
+                bm25_path=bm25_path,
+                embedding_model=EMBEDDING_MODEL,
+            )
+        )
     return ValidationReport(issues=issues, skipped=False)
 
 

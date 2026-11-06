@@ -83,6 +83,7 @@ flowchart TB
 | `eval_metrics.py` | метрики качества, чистые функции |
 | `server.py` | MCP-сервер и описания tools |
 | `observability.py` | stderr-only logging + in-memory метрики; health через `index_stats` / `health_snapshot` (без 5-го MCP tool) |
+| `manifest.py` | индекс-манифест (counts/fingerprint); startup — быстрый путь; полный hash — build_manifest/eval (ADR 0012) |
 | `index_guard.py` | запрет открывать индекс во время записи |
 
 ## 3. Потоки данных

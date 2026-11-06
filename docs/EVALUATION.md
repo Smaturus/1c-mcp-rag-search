@@ -153,6 +153,18 @@ python scripts\eval_router_v3.py
 python scripts\eval_metadata_xml.py
 ```
 
+## Локальный eval-контур (P2.2)
+
+Публичный CI **не** гоняет gold (наборы приватные). Локально / nightly:
+
+1. Собрать манифест: `python scripts/build_manifest.py --chroma-dir data/chroma_xml --bm25-dir data/bm25_all --out data/manifests/chroma_xml.json`
+2. Прогнать suite: `python scripts/eval_suite.py --manifest data/manifests/chroma_xml.json --sets v2,v3,v4 --out data/local_notes/eval_nightly`
+3. Первый прогон с `--record` пишет `data/manifests/eval_expected.json` (nDCG@10 + δ).
+4. Регрессия: фактический nDCG@10 < expected − δ → exit 1. Нет gold → skip набора, status=`partial`.
+5. Startup сверяет манифест по counts/model/bm25 (без fingerprint); полный fingerprint — в build_manifest / `--check-fingerprints` (ADR 0012).
+
+`data/manifests/` и gold в `.gitignore`.
+
 ## Как читать числа
 
 - Абсолютные значения скромные: e5-small не обучена на BSL-коде, gold-set

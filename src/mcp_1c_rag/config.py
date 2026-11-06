@@ -26,6 +26,12 @@ METADATA_XML_ROOT = Path(_xml_root) if _xml_root else None
 
 DATA_DIR = Path(os.environ.get("MCP_1C_DATA_DIR", PROJECT_ROOT / "data"))
 CHROMA_DIR = Path(os.environ.get("MCP_1C_CHROMA_DIR", DATA_DIR / "chroma"))
+MANIFEST_PATH = Path(
+    os.environ.get(
+        "MCP_1C_MANIFEST_PATH",
+        str(DATA_DIR / "manifests" / "chroma_xml.json"),
+    )
+)
 
 EMBEDDING_MODEL = os.environ.get(
     "MCP_1C_EMBEDDING_MODEL", "intfloat/multilingual-e5-small"

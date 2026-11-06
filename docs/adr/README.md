@@ -17,6 +17,7 @@
 | [0009](0009-corpus-change-metrics-shift.md) | Смена корпуса и «сдвиг лидера» hybrid → vector | **rejected** | 2026-10-23 |
 | [0010](0010-camelcase-bm25-tokenizer.md) | CamelCase-aware токенизация BM25 | принято | 2026-10-23 |
 | [0011](0011-merged-search-normalization.md) | Нормализация скоров при merge коллекций (`max` дефолт) | принято | 2026-11-06 |
+| [0012](0012-index-manifest.md) | Индекс-манифест; startup counts vs full fingerprint в eval | принято | 2026-11-06 |
 
 ## Статусы
 

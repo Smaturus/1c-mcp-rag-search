@@ -17,6 +17,7 @@ pytest-of-*/
 data/chroma/
 data/bm25/
 data/bm25_all/
+data/manifests/
 data/pytest_tmp/
 data/pytest_tmp2/
 data/*.log

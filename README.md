@@ -60,6 +60,10 @@ $env:MCP_1C_BM25_DIR="data\bm25_all"              # глобальный BM25
 # логи (только stderr): $env:MCP_1C_LOG_LEVEL="INFO"   # DEBUG|INFO|WARNING|ERROR
 #                       $env:MCP_1C_LOG_JSON="1"      # JSON-строки
 #                       $env:MCP_1C_LOG_QUERIES="1"   # opt-in: логировать текст запроса (default 0)
+# манифест индекса:     $env:MCP_1C_MANIFEST_PATH="data\manifests\chroma_xml.json"
+#   python scripts\build_manifest.py --chroma-dir data\chroma_xml --bm25-dir data\bm25_all --out data\manifests\chroma_xml.json
+# локальный eval-suite: python scripts\eval_suite.py --sets v2 --record
+#   (gold и data/manifests/ — локально, не в git; не для публичного CI)
 
 python scripts\build_procedure_index.py --no-lock           # code_proc
 python scripts\parse_config_xml.py --root $env:MCP_1C_METADATA_XML_ROOT

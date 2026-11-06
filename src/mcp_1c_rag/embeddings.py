@@ -4,15 +4,20 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from functools import lru_cache
-
-from sentence_transformers import SentenceTransformer
+from typing import TYPE_CHECKING
 
 from mcp_1c_rag.config import EMBEDDING_MODEL
+
+if TYPE_CHECKING:  # pragma: no cover - type-only import keeps CI light
+    from sentence_transformers import SentenceTransformer
 
 
 @lru_cache(maxsize=1)
 def get_model() -> SentenceTransformer:
-    """Load embedding model once per process."""
+    """Load embedding model once per process (import stays lazy for CI)."""
+    # Imported lazily: unit tests and CI do not install torch/sentence-transformers.
+    from sentence_transformers import SentenceTransformer
+
     return SentenceTransformer(EMBEDDING_MODEL)
 
 

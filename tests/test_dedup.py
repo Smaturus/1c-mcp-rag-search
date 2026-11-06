@@ -107,7 +107,7 @@ def test_iterative_dedup_growing_pool():
 def test_search_max_zero_delegates(monkeypatch: pytest.MonkeyPatch):
     synthetic = [make(f"x{i}", f"s{i}", 1.0 - i * 0.01) for i in range(5)]
 
-    def fake_impl(query, top_k, mode, collection):
+    def fake_impl(query, top_k, mode, collection, *, context=None):
         return synthetic[:top_k]
 
     monkeypatch.setattr(search_modes, "_search_impl", fake_impl)
@@ -131,6 +131,7 @@ def _patch_hybrid_dedup(
         k_rrf=60,
         query_embedding=None,
         bm25_scores=None,
+        context=None,
     ):
         return universe[:top_k]
 
@@ -209,7 +210,7 @@ def test_search_max_zero_single_impl_call(monkeypatch: pytest.MonkeyPatch):
     synthetic = [make(f"x{i}", f"s{i}", 1.0 - i * 0.01) for i in range(5)]
     calls = {"n": 0}
 
-    def fake_impl(query, top_k, mode, collection):
+    def fake_impl(query, top_k, mode, collection, *, context=None):
         calls["n"] += 1
         return synthetic[:top_k]
 
@@ -233,6 +234,7 @@ def test_hybrid_dedup_reuses_qvec_and_bm25(monkeypatch: pytest.MonkeyPatch):
         k_rrf=60,
         query_embedding=None,
         bm25_scores=None,
+        context=None,
     ):
         assert query_embedding is not None
         assert bm25_scores is not None

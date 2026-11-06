@@ -95,6 +95,9 @@ def test_all_labelled_routing_cases() -> None:
     """Контракт целиком: базовые + заказчик + Part-2 + N1–N15 (см. routing_cases.jsonl)."""
     import json
 
+    if not CASES_FILE.exists():
+        pytest.skip("routing_cases.jsonl отсутствует: приватный набор не публикуется")
+
     rows = [
         json.loads(line)
         for line in CASES_FILE.read_text(encoding="utf-8").splitlines()

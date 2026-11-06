@@ -49,6 +49,12 @@ data/eval/**/run_*.json
 # v3 raw per-query reports contain real corpus source paths; keep aggregates only
 data/eval/v3_*/report_pipeline.*
 
+# Private eval datasets: kept locally, never published (gold/anchors/routing)
+data/eval/gold_set*.jsonl
+data/eval/anchors*.jsonl
+data/eval/routing_cases*.jsonl
+data/eval/v2_curated.jsonl
+
 # HuggingFace / torch caches if placed in project
 .cache/
 models/
@@ -91,6 +97,7 @@ Desktop.ini
 .vscode/
 
 # Confidential configuration dumps and derived local artifacts (never commit)
+1C-Corpus/
 data/metadata_xml/
 data/lexicon/
 data/chroma_xml/
@@ -108,3 +115,45 @@ data/code_progress.json
 data/keep_awake*.log
 data/keep_awake*.err
 data/code_progress.json
+
+# e5-large baseline experiment (PLAN_EMBEDDING_BASELINE v1.6): indexes, pilot
+# subsets and eval runs are local artifacts; never commit these.
+data/chroma_1c/
+data/chroma_xml_eval/
+data/chroma_pilot_small/
+data/chroma_pilot_large/
+data/bm25_pilot/
+data/pilot_corpus/
+data/eval/_runs_1c/
+data/eval/_pilot_1c/
+data/procedure_index_progress_1c*.json
+data/procedure_index_progress_1c_smoke.json
+data/procedure_index_progress_pilot*.json
+
+# token-aware chunking baseline (PLAN_TOKEN_AWARE_CHUNKING.md v1.3): new indexes,
+# pilot corpus, eval runs and bookkeeping are local artifacts; never commit.
+data/chroma_token/
+data/chroma_token_pilot/
+data/bm25_token/
+data/token_pilot_corpus/
+data/eval/_runs_token/
+data/procedure_index_progress_token*.json
+data/token_chunk_smoke/
+
+# e5-base full-config candidate (PLAN_E5_BASE_FULL_CONFIG.md): indexes, pilot
+# corpus, eval runs and bookkeeping are local artifacts; never commit.
+data/chroma_large/
+data/chroma_large_pilot/
+data/bm25_large/
+data/eval/_runs_large/
+data/large_pilot_corpus/
+data/procedure_index_progress_large*.json
+
+data/chroma_e5_base/
+data/chroma_e5_base_backup_*/
+data/checkpoints/
+data/bm25_e5_base/
+data/bm25_e5_base_smoke_bsl/
+data/bm25_e5_base_smoke_xml/
+data/eval/_runs_e5_base/
+data/eval/_runs_e5_base_pilot_noise/

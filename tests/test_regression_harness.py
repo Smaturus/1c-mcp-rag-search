@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -53,17 +54,34 @@ def test_delta_floor_unknown_fails():
         resolve_delta_floor(Path("data/eval/unknown_gold.jsonl"), None)
 
 
-def test_scope_filter():
-    v2 = load_goldset(ROOT / "data" / "eval" / "gold_set_v2.jsonl")
-    assert len(filter_gold_by_scope(v2, None)) == 70
-    # v2 без поля scope — фильтр игнорируется
-    assert len(filter_gold_by_scope(v2, "code")) == 70
+def test_scope_filter(tmp_path: Path) -> None:
+    """Фильтр по scope проверяется на синтетическом gold-set (без приватных данных)."""
+    rows = [
+        {"id": "1", "query": "q1", "scope": "code", "relevant_sources": ["a.bsl"]},
+        {"id": "2", "query": "q2", "scope": "none", "relevant_sources": []},
+        {"id": "3", "query": "q3", "scope": "code", "relevant_sources": ["b.bsl"]},
+    ]
+    golden = tmp_path / "gold.jsonl"
+    golden.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+    loaded = load_goldset(golden)
+    assert len(filter_gold_by_scope(loaded, None)) == 3
+    assert len(filter_gold_by_scope(loaded, "code")) == 2
+    assert len(filter_gold_by_scope(loaded, "none")) == 1
 
-    v3 = load_goldset(ROOT / "data" / "eval" / "gold_set_v3_holdout.jsonl")
-    assert len(filter_gold_by_scope(v3, "code")) == 64
-
-    v4 = load_goldset(ROOT / "data" / "eval" / "gold_set_v4_holdout.jsonl")
-    assert len(filter_gold_by_scope(v4, "code")) == 179
+    # v2-подобный набор без поля scope: фильтр игнорируется
+    no_scope = tmp_path / "gold_no_scope.jsonl"
+    no_scope.write_text(
+        "\n".join(
+            json.dumps({"id": str(i), "query": f"q{i}", "relevant_sources": []})
+            for i in range(3)
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    assert len(filter_gold_by_scope(load_goldset(no_scope), "code")) == 3
 
 
 def test_metrics_not_mixed():

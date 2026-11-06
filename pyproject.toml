@@ -38,6 +38,7 @@ dev = [
   "ruff>=0.6.0",
   "mypy>=1.11.0",
   "radon>=6.0",
+  "scipy>=1.10",
 ]
 
 [project.scripts]

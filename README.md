@@ -16,7 +16,7 @@
 | Качество, v3 hold-out | hybrid 0.217 ± 0.015, vector 0.208 ± 0.020; p = 0.635 — не хуже (исторический расчёт на 71 code-запросе; текущий `--scope code` — 64) |
 | Diversity, v2/v3/v4 (nDCG@10 Δ) | **+0.028 / +0.003 / +0.012**; unique sources **5.86→7.37 / 6.72→7.97 / 5.21→7.47**; latency 48→54 мс (1.115×) |
 | Латентность (CPU) | **50–105 мс** `vector`, **100–120 мс** `hybrid`, ~2,4 с `hybrid_rerank`; с dedup — ~50–55 мс (same-process, без MCP round-trip) |
-| Инженерные проверки | **228 тестов**, `ruff` — 0, `mypy` — 0 ошибок (33 source-файла), гейт сложности, CI 3.11/3.12 |
+| Инженерные проверки | **237 тестов**, `ruff` — 0, `mypy` — 0 ошибок (35 source-файлов), гейт сложности, CI 3.11/3.12 |
 
 
 ## Задача
@@ -212,9 +212,9 @@ python -c "import asyncio; from mcp_1c_rag import server; print(sorted(t.name fo
 ## Разработка и качество
 
 ```powershell
-pytest -q        # 228 тестов (ML-стек не требуется: импорты ленивые)
+pytest -q        # 237 тестов (ML-стек не требуется: импорты ленивые)
 ruff check .     # линтер
-mypy             # типы (33 source-файла)
+mypy             # типы (35 source-файлов)
 python scripts\check_complexity.py   # гейт сложности (radon)
 pytest -q --cov=src/mcp_1c_rag       # покрытие
 ```
@@ -227,16 +227,16 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + г�
 | Сложность (`radon`) | средняя ≤ 6, блоки > 20 только из baseline, MI ≥ 20 | **4.37 (A)**, 143 блока |
 | Baseline сложных функций | не расти, только сокращать | 2 записи: `evaluate_retrieval` (33), `index_metadata` (30) |
 | Покрытие | floor 25 %, цель 60 % | **≥ 25 %** |
-| Unit-тесты | не уменьшать | **228** |
+| Unit-тесты | не уменьшать | **237** |
 
 
 ## Структура
 
 ```
-src/mcp_1c_rag/      33 source-файла: server, search_modes, bm25, rrf, rerank,
+src/mcp_1c_rag/      35 source-файлов: server, search_modes, bm25, rrf, rerank,
                      router, chunking*, embeddings, store, metrics, index_guard, dedup
 scripts/             сборка индексов, eval, диагностика
-tests/               228 тестов
+tests/               237 тестов
 docs/                ARCHITECTURE.md, EVALUATION.md, HISTORY.md, adr/
 data/eval/           gold-set и отчёты (индекс — data/eval/README.md)
 ```

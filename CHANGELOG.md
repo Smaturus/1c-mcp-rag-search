@@ -45,7 +45,10 @@
   `codesearch`/`metadatasearch`): запросы к коду и XML-метаданным, синонимы
   `code`/`metadata`, отказ для `config_xml`, проверка отсутствия обращений к
   huggingface.co; код выхода 1 при провалах.
-- README: актуализированы счётчики — 228 тестов, 33 source-файла под `mypy`.
+- README: актуализированы счётчики — 237 тестов, 35 source-файлов под `mypy`.
+- Нарезка по токенам для BSL и XML (`chunking_tokens.py`,
+  `chunking_xml_tokens.py`) с тестами. Скрипты и отчёты эксперимента в коммит
+  не входят.
 - Ресурсы MCP: `bsl://{+path}` отдаёт модуль целиком (выбор процедуры `?proc` —
   roadmap), `metadata://{kind}/{name}` — карточка объекта XML-метаданных из
   Chroma. `index://stats` — тот же текст, что `index_stats` (counts из sqlite),

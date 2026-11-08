@@ -102,5 +102,5 @@ def test_tool_surface_still_four() -> None:
         "search",
     ]
     source = inspect.getsource(server)
-    assert source.count("@mcp.tool()") == 4
+    assert source.count("@mcp.tool(") == 4
     assert "def health" not in source

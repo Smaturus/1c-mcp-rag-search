@@ -33,11 +33,11 @@ def _is_relevant(source: str, needles: list[str]) -> bool:
 
 def _get_collection(name: str):
     key = (name or "code").strip().lower()
-    if key in ("code", "bsl", "codesearch"):
+    if key in ("code", "code_proc", "bsl", "codesearch"):
         return get_code_collection(), "code"
-    if key in ("metadata", "meta", "metadatasearch"):
+    if key in ("metadata", "metadata_xml", "meta", "metadatasearch"):
         return get_metadata_collection(), "metadata"
-    raise ValueError("collection must be 'code' or 'metadata'")
+    raise ValueError("collection must be 'code_proc' or 'metadata_xml' (or code/metadata)")
 
 
 def _parse_needles(query: str, relevant_sources: str) -> list[str]:

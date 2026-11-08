@@ -1,138 +1,210 @@
-import json
-import queue
-import subprocess
+"""Smoke-проверка MCP-сервера по stdio: 4 tools, запросы к коду и XML-метаданным.
+
+Поднимает ``python -m mcp_1c_rag`` через клиент MCP SDK и проверяет:
+- tools/list отдаёт ровно search, evaluate_retrieval, route_query, index_stats,
+  все с ``readOnlyHint=true``;
+- search по BSL (``code_proc``), XML-метаданным (``metadata_xml``) и ``all``;
+- legacy-синонимы ``code``/``metadata`` дают ту же выдачу, что канонические имена;
+- ``config_xml`` (пока не в обслуживаемом индексе) отклоняется схемой;
+- route_query, evaluate_retrieval по XML-метаданным, index_stats;
+- сервер не обращается к huggingface.co (``HF_HUB_OFFLINE`` по умолчанию).
+
+Запуск (из корня репозитория, нужен собранный индекс):
+    python scripts/diag/mcp_stdio_smoke.py
+
+По умолчанию MCP_1C_CHROMA_DIR=data/chroma_xml, MCP_1C_BM25_DIR=data/bm25_all;
+заданные в окружении MCP_1C_* / HF_* значения пробрасываются серверу.
+Код выхода: 0 — все проверки прошли, 1 — есть провалы. stderr сервера —
+во временном файле ``mcp_stdio_stderr.log``.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import os
 import sys
 import tempfile
-import threading
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+
+from mcp import ClientSession, StdioServerParameters, stdio_client
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 PROJECT = Path(__file__).resolve().parents[2]
-PY = sys.executable
-CWD = PROJECT
 ERRLOG = Path(tempfile.gettempdir()) / "mcp_stdio_stderr.log"
+EXPECTED_TOOLS = ["evaluate_retrieval", "index_stats", "route_query", "search"]
+PREVIEW_CHARS = 240
 
-err = open(ERRLOG, "w", encoding="utf-8")
-proc = subprocess.Popen(
-    [PY, "-m", "mcp_1c_rag"],
-    cwd=CWD,
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=err,
-    text=True,
-    encoding="utf-8",
+
+@dataclass(frozen=True)
+class ToolCheck:
+    """Один вызов tool и ожидание: успех с непустым текстом или ошибка схемы."""
+
+    label: str
+    tool: str
+    arguments: dict[str, Any]
+    expect_error: bool = False
+    same_as: str | None = None
+
+
+CHECKS: tuple[ToolCheck, ...] = (
+    ToolCheck(
+        "search: код (code_proc, hybrid)",
+        "search",
+        {"query": "НДС с аванса", "top_k": 3, "collection": "code_proc"},
+    ),
+    ToolCheck(
+        "search: legacy code → code_proc",
+        "search",
+        {"query": "НДС с аванса", "top_k": 3, "collection": "code"},
+        same_as="search: код (code_proc, hybrid)",
+    ),
+    ToolCheck(
+        "search: XML-метаданные (metadata_xml, lexical)",
+        "search",
+        {
+            "query": "РеализацияТоваровУслуг",
+            "top_k": 3,
+            "mode": "lexical",
+            "collection": "metadata_xml",
+        },
+    ),
+    ToolCheck(
+        "search: legacy metadata → metadata_xml",
+        "search",
+        {
+            "query": "РеализацияТоваровУслуг",
+            "top_k": 3,
+            "mode": "lexical",
+            "collection": "metadata",
+        },
+        same_as="search: XML-метаданные (metadata_xml, lexical)",
+    ),
+    ToolCheck(
+        "search: код + XML (all, hybrid)",
+        "search",
+        {"query": "проведение реализации товаров", "top_k": 5, "collection": "all"},
+    ),
+    ToolCheck(
+        "search: config_xml отклоняется схемой",
+        "search",
+        {"query": "x", "collection": "config_xml"},
+        expect_error=True,
+    ),
+    ToolCheck(
+        "route_query",
+        "route_query",
+        {"query": "Какие проводки у документа РеализацияТоваровУслуг?"},
+    ),
+    ToolCheck(
+        "evaluate_retrieval: XML-метаданные",
+        "evaluate_retrieval",
+        {
+            "query": "РеализацияТоваровУслуг",
+            "k": 5,
+            "collection": "metadata_xml",
+            "null_pairs": 0,
+        },
+    ),
+    ToolCheck("index_stats", "index_stats", {}),
 )
 
-q = queue.Queue()
+
+@dataclass
+class Report:
+    """Итоги проверок: строки PASS/FAIL и тексты ответов для сравнения."""
+
+    failures: int = 0
+    texts: dict[str, str] = field(default_factory=dict)
+
+    def record(self, ok: bool, label: str, detail: str = "") -> None:
+        """Напечатать результат одной проверки и учесть провал."""
+        status = "PASS" if ok else "FAIL"
+        print(f"[{status}] {label}" + (f" — {detail}" if detail else ""))
+        if not ok:
+            self.failures += 1
 
 
-def reader():
-    for line in proc.stdout:
-        q.put(line.rstrip("\n"))
+def _server_env() -> dict[str, str]:
+    """Окружение сервера: MCP_1C_* / HF_* из текущего процесса + дефолты индекса."""
+    env = {k: v for k, v in os.environ.items() if k.startswith(("MCP_1C_", "HF_"))}
+    env.setdefault("MCP_1C_CHROMA_DIR", str(PROJECT / "data" / "chroma_xml"))
+    env.setdefault("MCP_1C_BM25_DIR", str(PROJECT / "data" / "bm25_all"))
+    return env
 
 
-threading.Thread(target=reader, daemon=True).start()
+def _text_of(result: Any) -> str:
+    """Склеить текстовые блоки ответа tools/call."""
+    return "\n".join(
+        block.text for block in result.content if getattr(block, "type", "") == "text"
+    )
 
 
-def send(obj):
-    proc.stdin.write(json.dumps(obj, ensure_ascii=False) + "\n")
-    proc.stdin.flush()
+def _preview(text: str) -> str:
+    """Короткий однострочный фрагмент ответа для печати."""
+    return text[:PREVIEW_CHARS].replace("\n", " | ")
 
 
-def recv(timeout):
-    try:
-        return json.loads(q.get(timeout=timeout))
-    except queue.Empty:
-        return None
+async def _check_tool_list(session: ClientSession, report: Report) -> None:
+    """tools/list: ровно 4 tools, все помечены только для чтения."""
+    tools = (await session.list_tools()).tools
+    names = sorted(tool.name for tool in tools)
+    report.record(names == EXPECTED_TOOLS, "tools/list: 4 tools", str(names))
+    not_read_only = [
+        tool.name
+        for tool in tools
+        if tool.annotations is None or tool.annotations.read_only_hint is not True
+    ]
+    report.record(not not_read_only, "tools/list: readOnlyHint=true", str(not_read_only or "все"))
 
 
-def rpc(id_, method, params=None, timeout=60):
-    msg = {"jsonrpc": "2.0", "id": id_, "method": method}
-    if params is not None:
-        msg["params"] = params
-    send(msg)
-    while True:
-        resp = recv(timeout)
-        if resp is None:
-            return None
-        if resp.get("id") == id_:
-            return resp
-        # skip notifications/other messages
+async def _run_check(session: ClientSession, check: ToolCheck, report: Report) -> None:
+    """Вызвать tool и сверить результат с ожиданием проверки."""
+    result = await session.call_tool(check.tool, check.arguments)
+    text = _text_of(result)
+    report.texts[check.label] = text
+    if check.expect_error:
+        report.record(bool(result.is_error), check.label, _preview(text))
+        return
+    ok = not result.is_error and bool(text.strip())
+    if ok and check.same_as is not None:
+        ok = text == report.texts.get(check.same_as)
+        report.record(ok, check.label, f"совпадает с «{check.same_as}»: {ok}")
+        return
+    report.record(ok, check.label, _preview(text))
 
 
-# 1. initialize
-resp = rpc(
-    1,
-    "initialize",
-    {
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": {"name": "zcode-test", "version": "1.0"},
-    },
-    timeout=90,
-)
-if resp is None:
-    print("FAIL: initialize TIMEOUT (server did not answer in 90s)")
-else:
-    print("INITIALIZE OK:", json.dumps(resp.get("result", resp), ensure_ascii=False)[:400])
+def _check_offline(report: Report) -> None:
+    """В stderr сервера не должно быть обращений к huggingface.co."""
+    log = ERRLOG.read_text(encoding="utf-8", errors="replace")
+    hits = log.count("huggingface.co")
+    report.record(hits == 0, "нет обращений к huggingface.co", f"упоминаний в stderr: {hits}")
 
-# 2. initialized notification
-send({"jsonrpc": "2.0", "method": "notifications/initialized"})
 
-# 3. tools/list
-resp = rpc(2, "tools/list", {}, timeout=60)
-if resp is None:
-    print("FAIL: tools/list TIMEOUT")
-else:
-    tools = [t.get("name") for t in resp.get("result", {}).get("tools", [])]
-    print("TOOLS/LIST OK:", tools)
+async def main() -> int:
+    """Прогнать все проверки; вернуть код выхода процесса."""
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "mcp_1c_rag"],
+        env=_server_env(),
+        cwd=str(PROJECT),
+    )
+    report = Report()
+    with ERRLOG.open("w", encoding="utf-8") as errlog:
+        async with (
+            stdio_client(params, errlog=errlog) as (read, write),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            await _check_tool_list(session, report)
+            for check in CHECKS:
+                await _run_check(session, check, report)
+    _check_offline(report)
+    print(f"\nПровалов: {report.failures}. stderr сервера: {ERRLOG}")
+    return 1 if report.failures else 0
 
-# 4. tools/call codesearch
-resp = rpc(
-    3,
-    "tools/call",
-    {
-        "name": "codesearch",
-        "arguments": {"query": "начисление НДС с аванса", "limit": 5},
-    },
-    timeout=300,
-)
-if resp is None:
-    print("FAIL: tools/call TIMEOUT (300s)")
-elif "error" in resp:
-    print("TOOLS/CALL ERROR:", json.dumps(resp["error"], ensure_ascii=False)[:2000])
-else:
-    content = resp.get("result", {}).get("content", [])
-    for c in content:
-        if c.get("type") == "text":
-            print("TOOLS/CALL codesearch RESULT:")
-            print(c.get("text", ""))
 
-# 5. tools/call metadatasearch
-resp = rpc(
-    4,
-    "tools/call",
-    {
-        "name": "metadatasearch",
-        "arguments": {"query": "начисление НДС с аванса счет-фактура", "limit": 5},
-    },
-    timeout=300,
-)
-if resp is None:
-    print("FAIL: metadatasearch TIMEOUT (300s)")
-elif "error" in resp:
-    print("TOOLS/CALL ERROR:", json.dumps(resp["error"], ensure_ascii=False)[:2000])
-else:
-    content = resp.get("result", {}).get("content", [])
-    for c in content:
-        if c.get("type") == "text":
-            print("TOOLS/CALL metadatasearch RESULT:")
-            print(c.get("text", ""))
-
-proc.terminate()
-err.close()
-print("--- stderr tail ---")
-with open(ERRLOG, encoding="utf-8") as f:
-    tail = f.read()[-1500:]
-print(tail)
+if __name__ == "__main__":
+    raise SystemExit(asyncio.run(main()))

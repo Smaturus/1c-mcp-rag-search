@@ -4,25 +4,52 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Annotated, Literal
 
 from mcp.server.mcpserver import MCPServer
+from mcp_types import ToolAnnotations
+from pydantic import Field
 
 from mcp_1c_rag import eval_retrieval as eval_mod
 from mcp_1c_rag import merge, search_modes
 from mcp_1c_rag import observability as obs
 from mcp_1c_rag import search as legacy_search
-from mcp_1c_rag.config import COLLECTION_METADATA, SEARCH_DEFAULT_MODE
+from mcp_1c_rag.config import (
+    COLLECTION_CODE,
+    COLLECTION_METADATA,
+    SEARCH_DEFAULT_MODE,
+)
 from mcp_1c_rag.formatting import format_candidates
 from mcp_1c_rag.index_guard import IndexBusy
 from mcp_1c_rag.router import route_query as route_decision
 
+# Empty string means "server default"; config_xml stays out until it is in the
+# served Chroma directory and the global BM25 index.
+SearchMode = Literal["", "lexical", "vector", "hybrid", "hybrid_rerank", "pearson"]
+SearchCollection = Literal["", "code_proc", "metadata_xml", "all", "code", "metadata"]
+EvalCollection = Literal["", "code_proc", "metadata_xml", "code", "metadata"]
+
+# Legacy collection names in search() point to the served collections.
+_LEGACY_SEARCH_COLLECTIONS = {
+    "code": COLLECTION_CODE,
+    "metadata": COLLECTION_METADATA,
+}
+
+_READ_ONLY_TOOL = ToolAnnotations(
+    read_only_hint=True,
+    destructive_hint=False,
+    idempotent_hint=True,
+    open_world_hint=False,
+)
+
 mcp = MCPServer(
     "1c-mcp-rag-search",
     instructions=(
-        "1C retrieval MCP: four tools — search, evaluate_retrieval, route_query, "
-        "index_stats. "
+        "1C retrieval MCP: four read-only tools — search, evaluate_retrieval, "
+        "route_query, index_stats. "
         "search(query, top_k, mode, collection) covers BSL and metadata: "
-        "collection empty/code_proc/code → code; metadata_xml/metadata → metadata; "
+        "collection empty/code_proc/code → BSL procedures (code_proc); "
+        "metadata_xml/metadata → XML metadata objects (metadata_xml); "
         "all → both collections merged. "
         "Modes: lexical | vector | hybrid (default) | hybrid_rerank | pearson. "
         "route_query returns tool=search with mode/collection to call. "
@@ -32,12 +59,26 @@ mcp = MCPServer(
 )
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_TOOL)
 def search(
-    query: str,
-    top_k: int = 5,
-    mode: str = "",
-    collection: str = "",
+    query: Annotated[
+        str, Field(description='Natural-language or exact-name query, e.g. "НДС с аванса".')
+    ],
+    top_k: Annotated[
+        int, Field(ge=1, le=50, description="How many results to return.")
+    ] = 5,
+    mode: Annotated[
+        SearchMode, Field(description="Retrieval mode; empty = server default (MCP_1C_SEARCH_MODE).")
+    ] = "",
+    collection: Annotated[
+        SearchCollection,
+        Field(
+            description=(
+                "code_proc/code = BSL procedures, metadata_xml/metadata = XML "
+                "metadata objects, all = both merged; empty = code_proc."
+            )
+        ),
+    ] = "",
 ) -> str:
     """Unified retrieval: vector | hybrid (RRF) | hybrid_rerank | pearson (baseline).
 
@@ -72,7 +113,7 @@ def search(
                 query=query,
                 top_k=top_k,
                 mode=(mode or None),
-                collection=collection,
+                collection=_LEGACY_SEARCH_COLLECTIONS.get(key, collection),
             )
         result_count = len(candidates)
         empty = result_count == 0
@@ -109,13 +150,26 @@ def search(
         )
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_TOOL)
 def evaluate_retrieval(
-    query: str,
-    k: int = 5,
-    collection: str = "",
-    relevant_sources: str = "",
-    null_pairs: int = 40,
+    query: Annotated[str, Field(description="Query to evaluate, e.g. НДС or ПередЗаписью.")],
+    k: Annotated[int, Field(ge=1, le=50, description="Top-k cutoff.")] = 5,
+    collection: Annotated[
+        EvalCollection,
+        Field(
+            description=(
+                "code_proc/code = BSL procedures, metadata_xml/metadata = XML "
+                "metadata objects; empty = code_proc."
+            )
+        ),
+    ] = "",
+    relevant_sources: Annotated[
+        str,
+        Field(description="Comma-separated path needles; empty = use query as needle."),
+    ] = "",
+    null_pairs: Annotated[
+        int, Field(ge=0, description="Random background pairs for null-tail; 0 skips.")
+    ] = 40,
 ) -> str:
     """Evaluate retrieval quality for one query (quality metrics).
 
@@ -160,8 +214,10 @@ def evaluate_retrieval(
         )
 
 
-@mcp.tool()
-def route_query(query: str) -> str:
+@mcp.tool(annotations=_READ_ONLY_TOOL)
+def route_query(
+    query: Annotated[str, Field(description="The user question to classify.")],
+) -> str:
     """Explain which search() call to use for a query, and why.
 
     Applies the routing contract: lexical for exact names/relations, vector for
@@ -210,7 +266,7 @@ def route_query(query: str) -> str:
         )
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY_TOOL)
 def index_stats() -> str:
     """Report which index the server is actually serving (paths, counts, model).
 
@@ -290,7 +346,12 @@ def search_hybrid(query: str, limit: int = 10) -> str:
 
 def main() -> None:
     """Entry point for stdio transport (Cursor mcp.json)."""
+    import os
     import sys
+
+    # Must be set before huggingface_hub is imported (it reads the flag at import).
+    # The model is downloaded by the indexing scripts; HF_HUB_OFFLINE=0 re-enables it here.
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
     from mcp_1c_rag.config import (
         COLLECTION_CODE,

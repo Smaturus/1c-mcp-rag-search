@@ -24,6 +24,28 @@
 
 ### Changed
 
+- **MCP surface:** схемы аргументов всех 4 tools типизированы (`Literal` +
+  `Field`): `mode` и `collection` отдаются как `enum`, `top_k`/`k` — в
+  диапазоне 1–50; значения вне схемы отклоняются SDK до запуска поиска
+  (регистр больше не нормализуется: `"HYBRID"` — ошибка). Все tools помечены
+  `ToolAnnotations` (`readOnlyHint=true`, `destructiveHint=false`,
+  `idempotentHint=true`, `openWorldHint=false`).
+- `search(collection="code"|"metadata")` теперь ищет в `code_proc` /
+  `metadata_xml` (раньше — в пустой legacy-коллекции `code` и в `metadata`).
+  `config_xml` в `search` не открыт, пока коллекции нет в обслуживаемом
+  Chroma-каталоге и глобальном BM25.
+- `evaluate_retrieval` принимает `collection="code_proc"|"metadata_xml"`
+  (раньше — только `code`/`metadata`, хотя описание tool предлагало канонические имена).
+- MCP-сервер по умолчанию стартует с `HF_HUB_OFFLINE=1`: модель берётся только
+  из локального кэша, обращений к huggingface.co при старте больше нет.
+  Скрипты индексации флаг не выставляют (первая загрузка модели — там);
+  `HF_HUB_OFFLINE=0` разрешает загрузку и для сервера. Если модели нет в кэше,
+  сервер падает при первом поиске, а не скачивает её.
+- `scripts/diag/mcp_stdio_smoke.py` переписан на 4 текущих tools (раньше вызывал
+  `codesearch`/`metadatasearch`): запросы к коду и XML-метаданным, синонимы
+  `code`/`metadata`, отказ для `config_xml`, проверка отсутствия обращений к
+  huggingface.co; код выхода 1 при провалах.
+- README: актуализированы счётчики — 206 тестов, 30 source-файлов под `mypy`.
 - Документация разделена на входную и историческую: README описывает текущее
   состояние; методика — `docs/EVALUATION.md`, хронология и отклонённые
   гипотезы — `docs/HISTORY.md`, индексы — `docs/adr/README.md` и

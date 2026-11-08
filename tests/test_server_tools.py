@@ -70,7 +70,7 @@ def test_search_collection_all_uses_merge(
 def test_search_collection_metadata_and_code(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """metadata_xml и legacy code передаются в search_modes.search."""
+    """metadata_xml передаётся как есть; legacy code/metadata → served коллекции."""
     calls: list[dict[str, Any]] = []
 
     def fake_search(**kwargs: Any) -> list[Candidate]:
@@ -93,7 +93,71 @@ def test_search_collection_metadata_and_code(
     assert server.search("q", collection="metadata_xml") == "n=1"
     assert calls[-1]["collection"] == "metadata_xml"
     assert server.search("q", collection="code") == "n=1"
-    assert calls[-1]["collection"] == "code"
+    assert calls[-1]["collection"] == server.COLLECTION_CODE
+    assert server.search("q", collection="metadata") == "n=1"
+    assert calls[-1]["collection"] == server.COLLECTION_METADATA
+
+
+def _tool_map() -> dict[str, Any]:
+    return {t.name: t for t in asyncio.run(server.mcp.list_tools())}
+
+
+def test_tools_are_annotated_read_only() -> None:
+    for tool in _tool_map().values():
+        hints = tool.annotations
+        assert hints is not None, tool.name
+        assert hints.read_only_hint is True
+        assert hints.destructive_hint is False
+        assert hints.idempotent_hint is True
+        assert hints.open_world_hint is False
+
+
+def test_search_schema_enumerates_mode_and_collection() -> None:
+    props = _tool_map()["search"].input_schema["properties"]
+    assert set(props["mode"]["enum"]) == {
+        "",
+        "lexical",
+        "vector",
+        "hybrid",
+        "hybrid_rerank",
+        "pearson",
+    }
+    collections = set(props["collection"]["enum"])
+    assert {"code_proc", "metadata_xml", "all"} <= collections
+    assert "config_xml" not in collections
+    assert props["top_k"]["minimum"] == 1
+    assert props["top_k"]["maximum"] == 50
+
+
+def test_evaluate_retrieval_schema_accepts_canonical_collections() -> None:
+    props = _tool_map()["evaluate_retrieval"].input_schema["properties"]
+    assert {"code_proc", "metadata_xml"} <= set(props["collection"]["enum"])
+    assert "config_xml" not in props["collection"]["enum"]
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        {"query": "x", "mode": "bogus"},
+        {"query": "x", "collection": "config_xml"},
+        {"query": "x", "top_k": 0},
+    ],
+)
+def test_search_rejects_out_of_schema_arguments(arguments: dict[str, Any]) -> None:
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    with pytest.raises(ToolError, match="validation error"):
+        asyncio.run(server.mcp.call_tool("search", arguments))
+
+
+def test_eval_get_collection_accepts_canonical_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(server.eval_mod, "get_code_collection", lambda: "C")
+    monkeypatch.setattr(server.eval_mod, "get_metadata_collection", lambda: "M")
+    assert server.eval_mod._get_collection("code_proc") == ("C", "code")
+    assert server.eval_mod._get_collection("metadata_xml") == ("M", "metadata")
+    assert server.eval_mod._get_collection("") == ("C", "code")
 
 
 def test_route_query_mcp_format() -> None:

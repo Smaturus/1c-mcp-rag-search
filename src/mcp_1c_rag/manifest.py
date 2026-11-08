@@ -19,7 +19,7 @@ from typing import Any
 
 from mcp_1c_rag.startup import ValidationIssue
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 _ENV_REVISION = "MCP_1C_EMBEDDING_REVISION"
 
 
@@ -153,6 +153,42 @@ def list_collection_counts(chroma_dir: Path) -> dict[str, int]:
     return {str(name): int(count) for name, count in rows}
 
 
+def list_collection_hnsw(chroma_dir: Path) -> dict[str, dict[str, Any]]:
+    """HNSW-настройки коллекций из collection_metadata (sqlite RO, без клиента Chroma).
+
+    Ключи без префикса ``hnsw:``: ``space``, ``sync_threshold``. Нет базы,
+    таблицы или она не читается — пустой словарь, не ошибка.
+    """
+    try:
+        conn = _open_chroma_ro(chroma_dir)
+    except FileNotFoundError:
+        return {}
+    try:
+        rows = conn.execute(
+            """
+            SELECT c.name, m.key, m.str_value, m.int_value, m.float_value
+            FROM collection_metadata m
+            JOIN collections c ON c.id = m.collection_id
+            WHERE m.key LIKE 'hnsw:%'
+            """
+        ).fetchall()
+    except sqlite3.Error:
+        return {}
+    finally:
+        conn.close()
+    found: dict[str, dict[str, Any]] = {}
+    for name, key, str_value, int_value, float_value in rows:
+        field_name = str(key).split(":", 1)[1]
+        if int_value is not None:
+            value: Any = int(int_value)
+        elif float_value is not None:
+            value = float(float_value)
+        else:
+            value = str_value
+        found.setdefault(str(name), {})[field_name] = value
+    return found
+
+
 def collection_fingerprint(chroma_dir: Path, collection: str) -> tuple[int, str]:
     """(count, sha256) по отсортированным embedding_id коллекции."""
     conn = _open_chroma_ro(chroma_dir)
@@ -230,7 +266,6 @@ def collect_manifest(
         BSL_CHUNK_CHARS,
         BSL_CHUNK_OVERLAP,
         EMBEDDING_MODEL,
-        HNSW_SYNC_THRESHOLD,
         META_CHUNK_CHARS,
         META_CHUNK_OVERLAP,
     )
@@ -273,7 +308,11 @@ def collect_manifest(
             "meta_chunk_chars": META_CHUNK_CHARS,
             "meta_chunk_overlap": META_CHUNK_OVERLAP,
         },
-        hnsw={"space": "cosine", "sync_threshold": HNSW_SYNC_THRESHOLD},
+        hnsw={
+            name: settings
+            for name, settings in list_collection_hnsw(chroma_path).items()
+            if name in names
+        },
         python=sys.version.split()[0],
         chromadb=_pkg_version("chromadb"),
         sentence_transformers=_pkg_version("sentence_transformers"),
@@ -298,6 +337,24 @@ def load_manifest(path: Path) -> IndexManifest:
     if not isinstance(raw, dict):
         raise ValueError(f"манифест должен быть JSON-объектом: {path}")
     return IndexManifest.from_dict(raw)
+
+
+def _warn(
+    code: str,
+    message: str,
+    *,
+    path: Path | str | None = None,
+    actual: Any = None,
+    hint: str | None = None,
+) -> ValidationIssue:
+    return ValidationIssue(
+        level="warning",
+        code=code,
+        message=message,
+        path=str(path) if path is not None else None,
+        actual=None if actual is None else str(actual),
+        hint=hint,
+    )
 
 
 def _err(
@@ -335,6 +392,17 @@ def validate_manifest(
     chroma_path = Path(chroma_dir)
     bm25_path = Path(bm25_dir)
 
+    if manifest.schema_version < SCHEMA_VERSION:
+        issues.append(
+            _warn(
+                "manifest_schema_outdated",
+                "манифест устарел, пересоберите",
+                path=chroma_path,
+                actual=f"schema_version={manifest.schema_version}",
+                hint="python scripts/build_manifest.py",
+            )
+        )
+
     if manifest.embedding_model != embedding_model:
         issues.append(
             _err(
@@ -359,6 +427,21 @@ def validate_manifest(
             )
         )
         return issues
+
+    if manifest.schema_version >= SCHEMA_VERSION:
+        live_hnsw = list_collection_hnsw(chroma_path)
+        for name, expected_hnsw in manifest.hnsw.items():
+            actual_hnsw = live_hnsw.get(name, {})
+            if actual_hnsw != expected_hnsw:
+                issues.append(
+                    _warn(
+                        "manifest_hnsw_mismatch",
+                        f"HNSW коллекции {name!r} не совпадает с манифестом",
+                        path=chroma_path,
+                        actual=f"manifest={expected_hnsw} live={actual_hnsw}",
+                        hint="python scripts/build_manifest.py",
+                    )
+                )
 
     for name, expected in manifest.collections.items():
         actual = live_counts.get(name)
@@ -468,6 +551,7 @@ __all__ = [
     "collect_manifest",
     "collection_fingerprint",
     "list_collection_counts",
+    "list_collection_hnsw",
     "load_manifest",
     "validate_manifest",
     "write_manifest",

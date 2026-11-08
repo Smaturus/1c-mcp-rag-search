@@ -18,6 +18,7 @@ from mcp_1c_rag.manifest import (  # noqa: E402
     collect_manifest,
     collection_fingerprint,
     list_collection_counts,
+    list_collection_hnsw,
     load_manifest,
     validate_manifest,
     write_manifest,
@@ -178,6 +179,112 @@ def test_bm25_fingerprint_stable(tmp_path: Path) -> None:
     _, fp2 = bm25_fingerprint(bm25)
     assert info["n_docs"] == 2
     assert fp1 == fp2
+
+
+def _add_hnsw(chroma_dir: Path, settings: dict[str, dict[str, object]]) -> None:
+    db = sqlite3.connect(chroma_dir / "chroma.sqlite3")
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS collection_metadata (
+            collection_id TEXT,
+            key TEXT,
+            str_value TEXT,
+            int_value INTEGER,
+            float_value REAL,
+            bool_value INTEGER
+        )
+        """
+    )
+    for name, fields in settings.items():
+        cid = f"c-{name}"
+        for field_name, value in fields.items():
+            column = "int_value" if isinstance(value, int) else "str_value"
+            db.execute(
+                f"INSERT INTO collection_metadata (collection_id, key, {column}) VALUES (?, ?, ?)",
+                (cid, f"hnsw:{field_name}", value),
+            )
+    db.commit()
+    db.close()
+
+
+def test_list_collection_hnsw_reads_sqlite(tmp_path: Path) -> None:
+    chroma = tmp_path / "chroma"
+    _write_chroma(chroma, {"code_proc": ["bsl_proc:1"], "metadata_xml": ["metaobj:a"]})
+    _add_hnsw(
+        chroma,
+        {
+            "code_proc": {"space": "cosine", "sync_threshold": 1000000},
+            "metadata_xml": {"space": "cosine", "sync_threshold": 1000000},
+        },
+    )
+    found = list_collection_hnsw(chroma)
+    assert found["code_proc"] == {"space": "cosine", "sync_threshold": 1000000}
+    assert found["metadata_xml"]["sync_threshold"] == 1000000
+
+
+def test_list_collection_hnsw_missing_table_is_empty(tmp_path: Path) -> None:
+    chroma = tmp_path / "chroma"
+    _write_chroma(chroma, {"code_proc": ["bsl_proc:1"]})
+    assert list_collection_hnsw(chroma) == {}
+    assert list_collection_hnsw(tmp_path / "absent") == {}
+
+
+def test_collect_manifest_hnsw_comes_from_sqlite(tmp_path: Path) -> None:
+    chroma = tmp_path / "chroma"
+    bm25 = tmp_path / "bm25"
+    _write_chroma(chroma, {"code_proc": ["bsl_proc:1"], "code": ["bsl:1"]})
+    _add_hnsw(
+        chroma,
+        {
+            "code_proc": {"space": "cosine", "sync_threshold": 1000000},
+            "code": {"space": "cosine", "sync_threshold": 1000000},
+        },
+    )
+    _write_bm25(bm25, ["bsl_proc:1"])
+    data = collect_manifest(chroma, bm25, collections=["code_proc"], embedding_model="m")
+    assert data["schema_version"] == 2
+    assert data["hnsw"] == {"code_proc": {"space": "cosine", "sync_threshold": 1000000}}
+
+
+def test_v1_manifest_warns_and_does_not_fail(tmp_path: Path) -> None:
+    chroma = tmp_path / "chroma"
+    bm25 = tmp_path / "bm25"
+    _write_chroma(chroma, {"code_proc": ["bsl_proc:1"]})
+    _add_hnsw(chroma, {"code_proc": {"space": "cosine", "sync_threshold": 1000000}})
+    _write_bm25(bm25, ["bsl_proc:1"])
+    data = collect_manifest(chroma, bm25, collections=["code_proc"], embedding_model="m")
+    data["schema_version"] = 1
+    data["hnsw"] = {"space": "cosine", "sync_threshold": 0}
+    man = IndexManifest.from_dict(data)
+    issues = validate_manifest(man, chroma_dir=chroma, bm25_dir=bm25, embedding_model="m")
+    outdated = [i for i in issues if i.code == "manifest_schema_outdated"]
+    assert len(outdated) == 1
+    assert outdated[0].level == "warning"
+    assert outdated[0].message == "манифест устарел, пересоберите"
+    assert not any(i.code == "manifest_hnsw_mismatch" for i in issues)
+    assert not any(i.level == "error" for i in issues)
+
+
+def test_hnsw_mismatch_is_warning(tmp_path: Path) -> None:
+    chroma = tmp_path / "chroma"
+    bm25 = tmp_path / "bm25"
+    _write_chroma(chroma, {"code_proc": ["bsl_proc:1"]})
+    _add_hnsw(chroma, {"code_proc": {"space": "cosine", "sync_threshold": 1000000}})
+    _write_bm25(bm25, ["bsl_proc:1"])
+    man = IndexManifest.from_dict(
+        collect_manifest(chroma, bm25, collections=["code_proc"], embedding_model="m")
+    )
+    db = sqlite3.connect(chroma / "chroma.sqlite3")
+    db.execute(
+        "UPDATE collection_metadata SET int_value = 0 WHERE key = 'hnsw:sync_threshold'"
+    )
+    db.commit()
+    db.close()
+    issues = validate_manifest(man, chroma_dir=chroma, bm25_dir=bm25, embedding_model="m")
+    mismatch = [i for i in issues if i.code == "manifest_hnsw_mismatch"]
+    assert len(mismatch) == 1
+    assert mismatch[0].level == "warning"
+    assert not any(i.level == "error" for i in issues)
 
 
 def test_manifest_does_not_import_server() -> None:

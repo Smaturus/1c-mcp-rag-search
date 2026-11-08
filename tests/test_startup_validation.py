@@ -305,8 +305,15 @@ def test_server_main_skip(monkeypatch: pytest.MonkeyPatch) -> None:
         ran["mcp"] = True
 
     monkeypatch.setattr(server.mcp, "run", fake_run)
+    started: list[float] = []
+    monkeypatch.setattr("mcp_1c_rag.config.WARMUP_ENABLED", True)
+    monkeypatch.setattr("mcp_1c_rag.config.WARMUP_DELAY_S", 1.5)
+    monkeypatch.setattr(
+        server.warmup, "start", lambda *, delay_s: started.append(delay_s)
+    )
     server.main()
     assert ran["mcp"] is True
+    assert started == [1.5]
 
 
 def test_no_heavy_imports() -> None:
@@ -394,6 +401,73 @@ def _write_chroma_sqlite(chroma_dir: Path, collections: dict[str, list[str]]) ->
             eid += 1
     db.commit()
     db.close()
+
+
+class _NoCountColl:
+    def count(self) -> int:
+        raise AssertionError("count() via API loads HNSW; sqlite count expected")
+
+
+class _NoCountClient:
+    def get_collection(self, name: str) -> Any:
+        return _NoCountColl()
+
+
+def test_collection_counts_come_from_sqlite_without_api_count(tmp_path: Path) -> None:
+    """Непустые коллекции в sqlite → count() через API не вызывается."""
+    chroma = tmp_path / "chroma"
+    _write_chroma_sqlite(chroma, {"code_proc": ["bsl_proc:1"], "metadata_xml": ["metaobj:1"]})
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25, n_docs=2)
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: _NoCountClient(),
+        check_manifest=False,
+    )
+    assert report.errors == []
+    assert report.warnings == []
+
+
+def test_zero_sqlite_count_falls_back_to_api(tmp_path: Path) -> None:
+    """sqlite дал 0 (например, другой тип сегмента) → решает count() через API."""
+    chroma = tmp_path / "chroma"
+    _write_chroma_sqlite(chroma, {"code_proc": [], "metadata_xml": ["metaobj:1"]})
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25, n_docs=2)
+    client = _FakeClient({"code_proc": 7, "metadata_xml": 1})
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: client,
+        check_manifest=False,
+    )
+    assert report.errors == []
+
+
+def test_unreadable_sqlite_falls_back_to_api(tmp_path: Path) -> None:
+    """chroma.sqlite3 не база данных → count() через API, пустой code — ошибка."""
+    chroma = tmp_path / "chroma"
+    _chroma_ok(chroma)
+    bm25 = tmp_path / "bm25"
+    _write_bm25(bm25)
+    client = _FakeClient({"code_proc": 0, "metadata_xml": 3})
+    report = validate_runtime(
+        chroma_dir=chroma,
+        bm25_dir=bm25,
+        code_collection="code_proc",
+        metadata_collection="metadata_xml",
+        search_default_mode="hybrid",
+        client_factory=lambda _p: client,
+        check_manifest=False,
+    )
+    assert any(i.code == "code_collection_empty" for i in report.errors)
 
 
 def test_manifest_missing_is_warning(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

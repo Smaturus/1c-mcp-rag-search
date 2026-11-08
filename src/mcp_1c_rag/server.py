@@ -11,7 +11,7 @@ from mcp_types import ToolAnnotations
 from pydantic import Field
 
 from mcp_1c_rag import eval_retrieval as eval_mod
-from mcp_1c_rag import merge, search_modes
+from mcp_1c_rag import merge, search_modes, warmup
 from mcp_1c_rag import observability as obs
 from mcp_1c_rag import search as legacy_search
 from mcp_1c_rag.config import (
@@ -104,6 +104,7 @@ def search(
     result_count = 0
     empty = False
     try:
+        warmup.wait_ready()
         if key == "all":
             candidates = merge.merged_search(
                 query, chosen_mode, max(1, int(top_k))
@@ -190,6 +191,7 @@ def evaluate_retrieval(
     ok = True
     error_type: str | None = None
     try:
+        warmup.wait_ready()
         return eval_mod.evaluate_retrieval(
             query=query,
             k=k,
@@ -266,13 +268,26 @@ def route_query(
         )
 
 
+def _collection_count_lines() -> list[str]:
+    """collection[name]=count из chroma.sqlite3, без загрузки HNSW."""
+    from mcp_1c_rag.config import CHROMA_DIR
+    from mcp_1c_rag.manifest import list_collection_counts
+
+    try:
+        counts = list_collection_counts(CHROMA_DIR)
+    except OSError as exc:
+        return [f"chroma_error={type(exc).__name__}: {exc}"]
+    return [f"collection[{name}]={count}" for name, count in sorted(counts.items())]
+
+
 @mcp.tool(annotations=_READ_ONLY_TOOL)
 def index_stats() -> str:
     """Report which index the server is actually serving (paths, counts, model).
 
     Useful before a demo or when results look unexpected: confirms the Chroma
     directory, collection sizes, BM25 index and the default search mode.
-    Also includes readiness status and in-memory request metrics (no query text).
+    Collection counts come from chroma.sqlite3 (no HNSW load). Also includes
+    readiness, warm-up state and in-memory request metrics (no query text).
     """
     from pathlib import Path
 
@@ -289,19 +304,8 @@ def index_stats() -> str:
         f"embedding_model={EMBEDDING_MODEL}",
         f"default_mode={SEARCH_DEFAULT_MODE}",
     ]
-    try:
-        from mcp_1c_rag.collections import all_specs
-        from mcp_1c_rag.store import get_client
-
-        client = get_client()
-        for spec in all_specs():
-            try:
-                collection = client.get_collection(spec.name)
-                lines.append(f"collection[{spec.name}]={collection.count()}")
-            except Exception:
-                continue
-    except Exception as exc:  # noqa: BLE001
-        lines.append(f"chroma_error={type(exc).__name__}: {exc}")
+    lines.extend(warmup.status_lines())
+    lines.extend(_collection_count_lines())
     bm25_file = Path(BM25_DIR) / "index.npz"
     lines.append(f"bm25_index_present={bm25_file.exists()}")
     lines.extend(obs.metrics_lines())
@@ -357,6 +361,8 @@ def main() -> None:
         COLLECTION_CODE,
         COLLECTION_METADATA,
         SEARCH_DEFAULT_MODE,
+        WARMUP_DELAY_S,
+        WARMUP_ENABLED,
     )
     from mcp_1c_rag.startup import (
         RuntimeValidationError,
@@ -379,10 +385,7 @@ def main() -> None:
         startup_errors=len(report.errors),
         startup_warnings=len(report.warnings),
     )
-    if report.skipped:
-        mcp.run(transport="stdio")
-        return
-    if report.errors:
+    if report.errors and not report.skipped:
         print(
             format_validation_error(
                 RuntimeValidationError(report.errors, report.warnings)
@@ -392,6 +395,8 @@ def main() -> None:
         raise SystemExit(2)
     if report.warnings:
         print(format_validation_warnings(report), file=sys.stderr)
+    if WARMUP_ENABLED:
+        warmup.start(delay_s=WARMUP_DELAY_S)
     mcp.run(transport="stdio")
 
 

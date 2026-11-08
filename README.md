@@ -16,7 +16,7 @@
 | Качество, v3 hold-out | hybrid 0.217 ± 0.015, vector 0.208 ± 0.020; p = 0.635 — не хуже (исторический расчёт на 71 code-запросе; текущий `--scope code` — 64) |
 | Diversity, v2/v3/v4 (nDCG@10 Δ) | **+0.028 / +0.003 / +0.012**; unique sources **5.86→7.37 / 6.72→7.97 / 5.21→7.47**; latency 48→54 мс (1.115×) |
 | Латентность (CPU) | **50–105 мс** `vector`, **100–120 мс** `hybrid`, ~2,4 с `hybrid_rerank`; с dedup — ~50–55 мс (same-process, без MCP round-trip) |
-| Инженерные проверки | **206 тестов**, `ruff` — 0, `mypy` — 0 ошибок (30 source-файлов), гейт сложности, CI 3.11/3.12 |
+| Инженерные проверки | **216 тестов**, `ruff` — 0, `mypy` — 0 ошибок (31 source-файл), гейт сложности, CI 3.11/3.12 |
 
 
 ## Задача
@@ -52,11 +52,14 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 
-$env:MCP_1C_STUDY_ROOT="D:\Study"                 # дерево .bsl
-$env:MCP_1C_METADATA_XML_ROOT="D:\Study_XML"     # XML-выгрузка
+$env:MCP_1C_STUDY_ROOT="1C-Corpus\1C_Corpus"          # дерево .bsl и XML выгрузки
+# XML-дамп для сборки metadata_xml; по умолчанию не задан
+# $env:MCP_1C_METADATA_XML_ROOT="1C-Corpus\1C_Corpus"
 $env:MCP_1C_CHROMA_DIR="data\chroma_xml"          # код + метаданные
 $env:MCP_1C_BM25_DIR="data\bm25_all"              # глобальный BM25
 # опционально: $env:MCP_1C_SKIP_STARTUP_CHECK="1"  # пропустить проверку индекса при старте MCP
+# прогрев:      $env:MCP_1C_WARMUP="0"             # отключить фоновый прогрев индекса и модели
+#               $env:MCP_1C_WARMUP_DELAY_S="3"     # задержка прогрева после старта (секунды)
 # логи (только stderr): $env:MCP_1C_LOG_LEVEL="INFO"   # DEBUG|INFO|WARNING|ERROR
 #                       $env:MCP_1C_LOG_JSON="1"      # JSON-строки
 #                       $env:MCP_1C_LOG_QUERIES="1"   # opt-in: логировать текст запроса (default 0)
@@ -72,7 +75,7 @@ python scripts\build_bm25.py --chroma-dir data\chroma_xml --out data\bm25_all
 python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir data\eval\code_proc
 ```
 
-Первый запуск индексации скачивает `intfloat/multilingual-e5-small`. MCP-сервер стартует с `HF_HUB_OFFLINE=1` (по умолчанию) и берёт модель только из локального кэша, не обращаясь к huggingface.co; `$env:HF_HUB_OFFLINE="0"` разрешает загрузку и для сервера. Пути `D:\Study` — примеры. Legacy-индексатор (символьные окна + текстовый отчёт) остаётся для ablation: `python -m mcp_1c_rag.indexer --reset` и `python scripts\build_bm25.py --chroma-dir data\chroma --out data\bm25`. Смоук — `--files 300 --collection code_proc_smoke --reset`.
+Первый запуск индексации скачивает `intfloat/multilingual-e5-small`. MCP-сервер стартует с `HF_HUB_OFFLINE=1` (по умолчанию) и берёт модель только из локального кэша, не обращаясь к huggingface.co; `$env:HF_HUB_OFFLINE="0"` разрешает загрузку и для сервера. Корпус по умолчанию — `1C-Corpus\1C_Corpus` в корне репозитория. Legacy-индексатор (символьные окна + текстовый отчёт) остаётся для ablation: `python -m mcp_1c_rag.indexer --reset` и `python scripts\build_bm25.py --chroma-dir data\chroma --out data\bm25`. Смоук — `--files 300 --collection code_proc_smoke --reset`.
 
 ## MCP-инструменты
 
@@ -83,7 +86,7 @@ python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir d
 | `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc` (`code` — синоним), `metadata_xml` (`metadata` — синоним), `all` (merge через `merge.merged_search`, нормализация `max` — ADR 0011); `top_k` 1–50. `config_xml` пока не открыт |
 | `evaluate_retrieval(query, k, …)` | Hit@k, Recall@k, MRR, nDCG по одному запросу; `collection`: `code_proc` / `metadata_xml` |
 | `route_query(query)` | маршрут → `tool=search` + `mode` + `collection`, причина и уверенность |
-| `index_stats()` | индекс (каталог, коллекции, размеры, режим) + readiness (`status`) и in-memory метрики (`requests_total`, `errors_total`, `latency_ms_*`); текст запросов не отдаёт |
+| `index_stats()` | индекс (каталог, коллекции, размеры, режим) + readiness (`status`), состояние прогрева (`warmup`) и in-memory метрики (`requests_total`, `errors_total`, `latency_ms_*`); текст запросов не отдаёт |
 
 Все четыре tools — только чтение: схема аргументов отдаётся с `enum` для `mode`/`collection`, а `ToolAnnotations` помечают их `readOnlyHint=true`, `openWorldHint=false`. Значения вне схемы отклоняются до запуска поиска.
 
@@ -207,9 +210,9 @@ python -c "import asyncio; from mcp_1c_rag import server; print(sorted(t.name fo
 ## Разработка и качество
 
 ```powershell
-pytest -q        # 206 тестов (ML-стек не требуется: импорты ленивые)
+pytest -q        # 216 тестов (ML-стек не требуется: импорты ленивые)
 ruff check .     # линтер
-mypy             # типы (30 source-файлов)
+mypy             # типы (31 source-файл)
 python scripts\check_complexity.py   # гейт сложности (radon)
 pytest -q --cov=src/mcp_1c_rag       # покрытие
 ```
@@ -222,23 +225,23 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + г�
 | Сложность (`radon`) | средняя ≤ 6, блоки > 20 только из baseline, MI ≥ 20 | **4.37 (A)**, 143 блока |
 | Baseline сложных функций | не расти, только сокращать | 2 записи: `evaluate_retrieval` (33), `index_metadata` (30) |
 | Покрытие | floor 25 %, цель 60 % | **≥ 25 %** |
-| Unit-тесты | не уменьшать | **206** |
+| Unit-тесты | не уменьшать | **216** |
 
 
 ## Структура
 
 ```
-src/mcp_1c_rag/      30 source-файлов: server, search_modes, bm25, rrf, rerank,
+src/mcp_1c_rag/      31 source-файл: server, search_modes, bm25, rrf, rerank,
                      router, chunking*, embeddings, store, metrics, index_guard, dedup
 scripts/             сборка индексов, eval, диагностика
-tests/               206 тестов
+tests/               216 тестов
 docs/                ARCHITECTURE.md, EVALUATION.md, HISTORY.md, adr/
 data/eval/           gold-set и отчёты (индекс — data/eval/README.md)
 ```
 
 ## Ограничения
 
-- HNSW не персистится при `hnsw:sync_threshold=1000000` (защита от chroma#7090): старт процесса пересобирает индекс из sqlite (~60–70 с).
+- HNSW не персистится при `hnsw:sync_threshold=1000000` (защита от chroma#7090): каждый запуск процесса пересобирает индекс из sqlite. Сервер отвечает клиенту за ~2–3 с (проверка при старте считает записи по sqlite, не загружая HNSW), а пересборку HNSW обеих коллекций, загрузку BM25 и e5 делает фоновый прогрев (~35 с после задержки `MCP_1C_WARMUP_DELAY_S`). `search` и `evaluate_retrieval` ждут его окончания: первый поиск сразу после запуска по-прежнему занимает ~35–40 с, после прогрева — ~50–180 мс. Пересборка HNSW держит GIL, поэтому на время прогрева сервер не отвечает и на другие запросы.
 
 - Один писатель; параллельная индексация не поддерживается.
 

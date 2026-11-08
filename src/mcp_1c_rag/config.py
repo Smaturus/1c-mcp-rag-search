@@ -14,10 +14,13 @@ from mcp_1c_rag.collections import (
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 STUDY_ROOT = Path(
-    os.environ.get("MCP_1C_STUDY_ROOT", str(Path.home() / "Study"))
+    os.environ.get("MCP_1C_STUDY_ROOT", str(PROJECT_ROOT / "1C-Corpus" / "1C_Corpus"))
 )
 STUDY_REPORT_ROOT = Path(
-    os.environ.get("MCP_1C_STUDY_REPORT_ROOT", str(Path.home() / "Study_Report"))
+    os.environ.get(
+        "MCP_1C_STUDY_REPORT_ROOT",
+        str(PROJECT_ROOT / "1C-Corpus" / "1C_Corpus_Report"),
+    )
 )
 # Optional extra metadata: *.xml from a configuration dump. Empty means off.
 # Set only in the process environment. Do not store a personal path in the repo.
@@ -54,6 +57,18 @@ META_CHUNK_OVERLAP = int(os.environ.get("MCP_1C_META_CHUNK_OVERLAP", "200"))
 # the index out of the on-disk pickle, so a restart rebuilds it from the WAL
 # instead of failing on a corrupted segment. 0 = library default.
 HNSW_SYNC_THRESHOLD = int(os.environ.get("MCP_1C_HNSW_SYNC_THRESHOLD", "0"))
+
+# Background warm-up after MCP start (HNSW of both collections, BM25, e5 model);
+# search tools wait for it instead of loading in parallel. MCP_1C_WARMUP=0 disables.
+WARMUP_ENABLED = os.environ.get("MCP_1C_WARMUP", "1").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+# HNSW loading holds the GIL, so warm-up starts after this delay: enough for a
+# stdio client to finish initialize and the tools/prompts/resources lists.
+WARMUP_DELAY_S = float(os.environ.get("MCP_1C_WARMUP_DELAY_S", "3"))
 
 # Indexing throughput (keep modest on 16 GB RAM + CPU-only)
 EMBED_BATCH_SIZE = int(os.environ.get("MCP_1C_EMBED_BATCH_SIZE", "8"))

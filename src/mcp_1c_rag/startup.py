@@ -187,17 +187,39 @@ def _check_chroma_path(chroma_path: Path) -> list[ValidationIssue]:
     return issues
 
 
+def _sqlite_counts(chroma_path: Path) -> dict[str, int]:
+    """COUNT коллекций из chroma.sqlite3 (RO); пустой dict — схема не читается."""
+    from mcp_1c_rag.manifest import list_collection_counts
+
+    try:
+        return list_collection_counts(chroma_path)
+    except OSError:
+        return {}
+
+
+def _collection_count(coll: Any, name: str, fast_counts: dict[str, int]) -> int:
+    """Count без загрузки HNSW, если sqlite дал > 0; иначе ``count()`` через API."""
+    fast = fast_counts.get(name, 0)
+    return fast if fast > 0 else int(coll.count())
+
+
 def _check_collections(
     client: Any,
     code_name: str,
     meta_name: str,
     chroma_path: Path,
 ) -> list[ValidationIssue]:
-    """Проверить code/metadata-коллекции через уже открытый клиент."""
+    """Проверить code/metadata-коллекции через уже открытый клиент.
+
+    Первый ``count()`` через API грузит сегменты коллекции (HNSW пересобирается
+    из sqlite, десятки секунд), поэтому число записей берётся из sqlite; API —
+    запасной путь, когда sqlite не дал положительного числа.
+    """
     issues: list[ValidationIssue] = []
+    fast_counts = _sqlite_counts(chroma_path)
     try:
         code_coll = client.get_collection(code_name)
-        code_count = int(code_coll.count())
+        code_count = _collection_count(code_coll, code_name, fast_counts)
     except Exception as exc:  # noqa: BLE001
         issues.append(
             _issue(
@@ -231,7 +253,7 @@ def _check_collections(
 
     try:
         meta_coll = client.get_collection(meta_name)
-        meta_count = int(meta_coll.count())
+        meta_count = _collection_count(meta_coll, meta_name, fast_counts)
     except Exception as exc:  # noqa: BLE001
         issues.append(
             _issue(

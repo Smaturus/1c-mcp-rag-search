@@ -18,7 +18,9 @@ from mcp.shared.path_security import PathEscapeError, safe_join
 from mcp_1c_rag.config import COLLECTION_METADATA, STUDY_ROOT
 from mcp_1c_rag.uris import bsl_uri, metadata_uri
 
-BSL_MAX_BYTES = int(os.environ.get("MCP_1C_BSL_MAX_BYTES", "262144"))
+# 5 MiB covers the largest module in 1C-Corpus (ЭК_МетодыЭДО, 3.9 MB).
+# A lower cap made search URIs fail; Cursor shows that ResourceError as "not found".
+BSL_MAX_BYTES = int(os.environ.get("MCP_1C_BSL_MAX_BYTES", "5242880"))
 
 
 def read_bsl_module(

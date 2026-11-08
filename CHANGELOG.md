@@ -49,6 +49,9 @@
 - Нарезка по токенам для BSL и XML (`chunking_tokens.py`,
   `chunking_xml_tokens.py`) с тестами. Скрипты и отчёты эксперимента в коммит
   не входят.
+- `bsl://` принимает модуль до 5 МиБ (`MCP_1C_BSL_MAX_BYTES`, раньше 256 КБ).
+  Крупнейший модуль корпуса — 3,9 МБ; при старом лимите Cursor показывал отказ
+  как «resource not found».
 - Ресурсы MCP: `bsl://{+path}` отдаёт модуль целиком (выбор процедуры `?proc` —
   roadmap), `metadata://{kind}/{name}` — карточка объекта XML-метаданных из
   Chroma. `index://stats` — тот же текст, что `index_stats` (counts из sqlite),

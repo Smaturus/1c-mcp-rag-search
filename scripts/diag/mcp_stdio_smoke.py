@@ -7,6 +7,7 @@
 - legacy-синонимы ``code``/``metadata`` дают ту же выдачу, что канонические имена;
 - ``config_xml`` (пока не в обслуживаемом индексе) отклоняется схемой;
 - route_query, evaluate_retrieval по XML-метаданным, index_stats;
+- чтение ресурсов bsl:// и metadata:// по URI из выдачи search;
 - сервер не обращается к huggingface.co (``HF_HUB_OFFLINE`` по умолчанию).
 
 Запуск (из корня репозитория, нужен собранный индекс):
@@ -176,6 +177,29 @@ async def _run_check(session: ClientSession, check: ToolCheck, report: Report) -
     report.record(ok, check.label, _preview(text))
 
 
+async def _check_uris(session: ClientSession, report: Report) -> None:
+    """Прочитать bsl:// и metadata:// из выдачи search: код и XML-метаданные."""
+    import re
+
+    wanted = {
+        "bsl": "search: код (code_proc, hybrid)",
+        "metadata": "search: XML-метаданные (metadata_xml, lexical)",
+    }
+    for scheme, label in wanted.items():
+        match = re.search(rf"uri=({scheme}://\S+)", report.texts.get(label, ""))
+        if match is None:
+            report.record(False, f"uri {scheme}:// в выдаче", "нет")
+            continue
+        uri = match.group(1)
+        try:
+            result = await session.read_resource(uri)
+        except Exception as exc:  # noqa: BLE001 — смоук фиксирует любой отказ чтения
+            report.record(False, f"resources/read {uri}", type(exc).__name__)
+            continue
+        text = getattr(result.contents[0], "text", "")
+        report.record(bool(text.strip()), f"resources/read {scheme}://", f"{len(text)} символов")
+
+
 def _check_offline(report: Report) -> None:
     """В stderr сервера не должно быть обращений к huggingface.co."""
     log = ERRLOG.read_text(encoding="utf-8", errors="replace")
@@ -201,6 +225,7 @@ async def main() -> int:
             await _check_tool_list(session, report)
             for check in CHECKS:
                 await _run_check(session, check, report)
+            await _check_uris(session, report)
     _check_offline(report)
     print(f"\nПровалов: {report.failures}. stderr сервера: {ERRLOG}")
     return 1 if report.failures else 0

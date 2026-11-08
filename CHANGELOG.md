@@ -45,7 +45,14 @@
   `codesearch`/`metadatasearch`): запросы к коду и XML-метаданным, синонимы
   `code`/`metadata`, отказ для `config_xml`, проверка отсутствия обращений к
   huggingface.co; код выхода 1 при провалах.
-- README: актуализированы счётчики — 216 тестов, 31 source-файл под `mypy`.
+- README: актуализированы счётчики — 228 тестов, 33 source-файла под `mypy`.
+- Ресурсы MCP: `bsl://{+path}` отдаёт модуль целиком (выбор процедуры `?proc` —
+  roadmap), `metadata://{kind}/{name}` — карточка объекта XML-метаданных из
+  Chroma. `index://stats` — тот же текст, что `index_stats` (counts из sqlite),
+  `index://manifest` — JSON манифеста. `search` печатает `uri=`. Построение URI
+  в `uris.py` (только stdlib). `IndexBusy` и `FileNotFoundError` при чтении
+  карточки становятся `ResourceError`. Обход `bsl://..` SDK отвечает
+  `ResourceNotFoundError`, файл вне корня не читается.
 - Холодный старт MCP: ответ на `initialize` за ~2,4 с вместо ~25–27 с.
   Проверка при старте (`startup.py`) берёт число записей коллекций из
   `chroma.sqlite3` (`manifest.list_collection_counts`), а не первым `count()`

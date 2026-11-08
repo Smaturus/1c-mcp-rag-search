@@ -21,6 +21,7 @@ from mcp_1c_rag.config import (
 )
 from mcp_1c_rag.formatting import format_candidates
 from mcp_1c_rag.index_guard import IndexBusy
+from mcp_1c_rag.resources import read_bsl_module, read_metadata_card
 from mcp_1c_rag.router import route_query as route_decision
 
 # Empty string means "server default"; config_xml stays out until it is in the
@@ -53,6 +54,11 @@ mcp = MCPServer(
         "all → both collections merged. "
         "Modes: lexical | vector | hybrid (default) | hybrid_rerank | pearson. "
         "route_query returns tool=search with mode/collection to call. "
+        "Each search hit carries a uri: bsl://<path> (whole BSL module) or "
+        "metadata://<kind>/<name> (XML metadata object card). Read it as a "
+        "resource; resource templates are not listed by every client. "
+        "bsl:// returns the whole module; procedure selection is not supported. "
+        "index://stats and index://manifest are static resources. "
         "Legacy Python aliases (codesearch, metadatasearch, search_1c_metadata, "
         "search_knowledge_base, search_hybrid) are not MCP tools."
     ),
@@ -268,6 +274,28 @@ def route_query(
         )
 
 
+@mcp.resource("bsl://{+path}")
+def bsl_module(path: str) -> str:
+    """Whole BSL module from the corpus (MCP_1C_STUDY_ROOT), .bsl only.
+
+    Returns the entire module. Selecting one procedure (?proc) is not
+    supported and is tracked as a roadmap item. The path comes from a search
+    hit (uri=bsl://...). Reads stay inside the corpus root.
+    """
+    return read_bsl_module(path)
+
+
+@mcp.resource("metadata://{kind}/{name}")
+def metadata_object(kind: str, name: str) -> str:
+    """Object card from the XML metadata collection (metadata_xml in Chroma).
+
+    kind/name come from a search hit (uri=metadata://Kind/Name), for example
+    metadata://Document/РеализацияТоваровУслуг. Served from the index, not by
+    parsing XML files.
+    """
+    return read_metadata_card(kind, name)
+
+
 def _collection_count_lines() -> list[str]:
     """collection[name]=count из chroma.sqlite3, без загрузки HNSW."""
     from mcp_1c_rag.config import CHROMA_DIR
@@ -278,6 +306,31 @@ def _collection_count_lines() -> list[str]:
     except OSError as exc:
         return [f"chroma_error={type(exc).__name__}: {exc}"]
     return [f"collection[{name}]={count}" for name, count in sorted(counts.items())]
+
+
+@mcp.resource("index://stats")
+def index_stats_resource() -> str:
+    """Same text as the index_stats tool. Counts come from sqlite, not Chroma."""
+    return index_stats()
+
+
+@mcp.resource("index://manifest")
+def index_manifest_resource() -> str:
+    """Pretty JSON of the index manifest. No Chroma and no HNSW."""
+    import json
+
+    from mcp.server.mcpserver.exceptions import ResourceError
+
+    from mcp_1c_rag.config import MANIFEST_PATH
+    from mcp_1c_rag.manifest import load_manifest
+
+    if not MANIFEST_PATH.is_file():
+        raise ResourceError(f"манифест не найден: {MANIFEST_PATH}")
+    try:
+        manifest = load_manifest(MANIFEST_PATH)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ResourceError(f"манифест не читается: {exc}") from exc
+    return json.dumps(manifest.to_dict(), ensure_ascii=False, indent=2)
 
 
 @mcp.tool(annotations=_READ_ONLY_TOOL)

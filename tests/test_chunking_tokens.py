@@ -14,6 +14,10 @@ from mcp_1c_rag.chunking_tokens import (
     model_input_tokens,
 )
 
+# Tokenizer tests need transformers + a cached XLM-R tokenizer. Keep the public
+# CI dependency-light; these run locally / in the optional ML environment.
+pytest.importorskip("transformers")
+
 MODEL = "intfloat/multilingual-e5-base"
 SRC = "CommonModules/Тест/Ext/ObjectModule.bsl"
 

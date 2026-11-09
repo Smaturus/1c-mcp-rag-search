@@ -24,6 +24,9 @@
 
 ### Changed
 
+- В README зафиксировано: нарезка по токенам (`chunking_tokens.py`,
+  `chunking_xml_tokens.py`) экспериментальная и в обслуживаемый индекс не входит.
+  `config_xml` в текущий индекс не добавляется.
 - Манифест индекса, схема 2: `hnsw` читается из `collection_metadata` sqlite
   по коллекциям из того же списка имён, что и карта `collections`
   (`space`, `sync_threshold`), а не из переменной окружения.

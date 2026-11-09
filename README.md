@@ -16,7 +16,7 @@
 | Качество, v3 hold-out | hybrid 0.217 ± 0.015, vector 0.208 ± 0.020; p = 0.635 — не хуже (исторический расчёт на 71 code-запросе; текущий `--scope code` — 64) |
 | Diversity, v2/v3/v4 (nDCG@10 Δ) | **+0.028 / +0.003 / +0.012**; unique sources **5.86→7.37 / 6.72→7.97 / 5.21→7.47**; latency 48→54 мс (1.115×) |
 | Латентность (CPU) | **50–105 мс** `vector`, **100–120 мс** `hybrid`, ~2,4 с `hybrid_rerank`; с dedup — ~50–55 мс (same-process, без MCP round-trip) |
-| Инженерные проверки | **257 тестов**, `ruff` — 0, `mypy` — 0 ошибок (35 source-файлов), гейт сложности, CI 3.11/3.12 |
+| Инженерные проверки | **258 тестов**, `ruff` — 0, `mypy` — 0 ошибок (35 source-файлов), гейт сложности, CI 3.11/3.12 |
 
 
 ## Задача
@@ -157,6 +157,8 @@ python -c "from mcp_1c_rag.search_modes import search; print(search('НДС с �
 
 Смоук на 800 файлах: покрытие кода **99,6 %**, чанков сверх 512 токенов **0,3 %**, токены p50/p99/max — 179/472/554. Отчёт — [`data/eval/procedure_chunking_smoke.md`](data/eval/procedure_chunking_smoke.md).
 
+[`chunking_tokens.py`](src/mcp_1c_rag/chunking_tokens.py) и [`chunking_xml_tokens.py`](src/mcp_1c_rag/chunking_xml_tokens.py) — эксперимент: режут по токенам и в обслуживаемый индекс не входят. Отдельный индекс и сравнение качества — только отдельным решением. Коллекцию `config_xml` в текущий индекс не добавлять: это меняет метрики v2/v3.
+
 ## Оценка качества
 
 Релевантность — на уровне файла-источника, повторные чанки схлопываются до расчёта метрик (ADR 0003–0004). v2 — dev-набор, v3 — независимый hold-out.
@@ -212,7 +214,7 @@ python -c "import asyncio; from mcp_1c_rag import server; print(sorted(t.name fo
 ## Разработка и качество
 
 ```powershell
-pytest -q        # 257 тестов (ML-стек не требуется: импорты ленивые)
+pytest -q        # 258 тестов (ML-стек не требуется: импорты ленивые)
 ruff check .     # линтер
 mypy             # типы (35 source-файлов)
 python scripts\check_complexity.py   # гейт сложности (radon)
@@ -227,7 +229,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + г�
 | Сложность (`radon`) | средняя ≤ 6, блоки > 20 только из baseline, MI ≥ 20 | **4.37 (A)**, 143 блока |
 | Baseline сложных функций | не расти, только сокращать | 2 записи: `evaluate_retrieval` (33), `index_metadata` (30) |
 | Покрытие | floor 25 %, цель 60 % | **≥ 25 %** |
-| Unit-тесты | не уменьшать | **257** |
+| Unit-тесты | не уменьшать | **258** |
 
 
 ## Структура
@@ -236,7 +238,7 @@ CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)): `ruff` + `mypy` + г�
 src/mcp_1c_rag/      35 source-файлов: server, search_modes, bm25, rrf, rerank,
                      router, chunking*, embeddings, store, metrics, index_guard, dedup
 scripts/             сборка индексов, eval, диагностика
-tests/               257 тестов
+tests/               258 тестов
 docs/                ARCHITECTURE.md, EVALUATION.md, HISTORY.md, adr/
 data/eval/           gold-set и отчёты (индекс — data/eval/README.md)
 ```

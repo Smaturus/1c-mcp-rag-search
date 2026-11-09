@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,6 +60,37 @@ def test_read_bsl_module(tmp_path: Path) -> None:
     assert "Процедура П" in resources.read_bsl_module(
         "Documents/A/Ext/ObjectModule.bsl", root=tmp_path
     )
+
+
+def test_read_bsl_rejects_symlink_escape(tmp_path: Path) -> None:
+    """Ссылка внутри корня ведёт наружу: ResourceError, файл не прочитан.
+
+    На Windows без права на symlink тот же обход проверяется junction:
+    ``Path.resolve`` внутри ``safe_join`` следует и за тем, и за другим.
+    """
+    outside = tmp_path.parent / "secret_via_symlink.bsl"
+    outside.write_text("SECRET", encoding="utf-8")
+    link = tmp_path / "leak.bsl"
+    rel = "leak.bsl"
+    try:
+        link.symlink_to(outside)
+    except OSError:
+        outside.unlink()
+        outside_dir = tmp_path.parent / "secret_via_junction"
+        outside_dir.mkdir()
+        outside = outside_dir / "leak.bsl"
+        outside.write_text("SECRET", encoding="utf-8")
+        link = tmp_path / "alias"
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(link), str(outside_dir)],
+            check=True,
+            capture_output=True,
+        )
+        rel = "alias/leak.bsl"
+    with pytest.raises(ResourceError, match="вне каталога"):
+        resources.read_bsl_module(rel, root=tmp_path)
+    assert outside.read_text(encoding="utf-8") == "SECRET"
+    outside.unlink()
 
 
 def test_read_bsl_rejects_escape_and_limits(tmp_path: Path) -> None:

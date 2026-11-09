@@ -39,16 +39,15 @@ flowchart TB
         VS --> RRF[rrf.py: RRF, k=60]
         BS --> RRF
         RRF --> RR[rerank.py: flashrank ONNX<br/>опционально]
-        RRF --> OUT[Candidate list]
+        RRF --> OUT[Candidate + uri]
         RR --> OUT
     end
 
-    subgraph MCP["MCP tools (server.py)"]
-        T1[codesearch / metadatasearch]
-        T2["search(query, top_k, mode)"]
-        T3["evaluate_retrieval(query, k)"]
-        T4["search_1c_metadata / search_knowledge_base / search_hybrid"]
-        T5["route_query / index_stats"]
+    subgraph MCP["MCP stdio: 4 tools + 4 resources"]
+        T1["search / evaluate_retrieval"]
+        T2["route_query / index_stats"]
+        R1["bsl:// / metadata://"]
+        R2["index://stats / index://manifest"]
     end
 
     subgraph Eval["Оценка (offline)"]
@@ -60,8 +59,8 @@ flowchart TB
     end
 
     OUT --> T1
-    OUT --> T2
-    ST --> T3
+    OUT --> R1
+    ST --> T2
     Serving --> EP
     Serving --> BEN
 ```
@@ -69,6 +68,7 @@ flowchart TB
 | Модуль | Ответственность |
 |---|---|
 | `chunking.py`, `chunking_procedures.py`, `indexer.py` | нарезка `.bsl` (символьные окна и процедурная), XML-метаданных — на объекты/поля, запись в Chroma |
+| `chunking_tokens.py`, `chunking_xml_tokens.py` | экспериментальная нарезка по токенам; в обслуживаемый индекс не входят |
 | `embeddings.py` | обёртка e5-small: префиксы `query:` / `passage:`, нормализация |
 | `store.py` | открытие Chroma-коллекций (`code_proc`, `metadata_xml`; исторические `code`, `metadata`), базовый запрос |
 | `bm25.py` | токенизация под 1С, `BM25Okapi` для кандидатов и `Bm25Index` — глобальный инвертированный индекс |
@@ -81,7 +81,10 @@ flowchart TB
 | `router.py` | контракт выбора инструмента lexical / vector / hybrid |
 | `models.py` | `Candidate` — лёгкая модель результата (без тяжёлых импортов) |
 | `eval_metrics.py` | метрики качества, чистые функции |
-| `server.py` | MCP-сервер и описания tools |
+| `server.py` | MCP stdio: 4 tools (`search`, `evaluate_retrieval`, `route_query`, `index_stats`) и 4 resources |
+| `resources.py` | чтение модуля BSL с диска и карточки XML-метаданных из Chroma |
+| `uris.py` | `bsl://` и `metadata://` (только stdlib) |
+| `warmup.py` | фоновая загрузка HNSW, BM25 и e5 после старта |
 | `observability.py` | stderr-only logging + in-memory метрики; health через `index_stats` / `health_snapshot` (без 5-го MCP tool) |
 | `manifest.py` | индекс-манифест (counts/fingerprint); startup — быстрый путь; полный hash — build_manifest/eval (ADR 0012) |
 | `index_guard.py` | запрет открывать индекс во время записи |
@@ -99,7 +102,7 @@ BM25 (`data/bm25_all`, npz + json; 179 586 чанков, 236 320 термов, ~
 2. Chroma отдаёт top-N по cosine;
 3. `Bm25Index` отдаёт top-N по BM25 (инвертированный индекс, скоринг только по постингам);
 4. `rrf_fuse` объединяет два ранжирования: `score = Σ 1/(k_rrf + rank)`;
-5. результат форматируется для MCP-клиента.
+5. результат форматируется для MCP-клиента; у хита кода — `uri=bsl://<путь>`, у карточки метаданных — `uri=metadata://<вид>/<имя>`. `index://stats` отдаёт тот же текст, что `index_stats`; `index://manifest` — JSON манифеста. Оба не открывают Chroma.
 
 **Запрос (`hybrid_rerank`):** к шагам 1–4 добавляется cross-encoder над 20 кандидатами.
 
@@ -149,6 +152,13 @@ markdown/JSON отчёт; парный тест `eval_paired.py` (bootstrap CI +
    [`data/eval/ablation_2x2.md`](../data/eval/ablation_2x2.md).
 6. **Инкрементального обновления нет**: после изменения выгрузки индекс
    пересобирается целиком; прерванную сборку можно возобновить.
+7. **`bsl://` отдаёт модуль целиком** (до 5 МиБ). Выбор процедуры `?proc` —
+   roadmap, не реализован.
+8. **Токенные чанкеры** (`chunking_tokens.py`, `chunking_xml_tokens.py`) не
+   входят в обслуживаемый индекс. `config_xml` в текущий индекс не добавлен.
+9. **Прогрев держит GIL** при загрузке модели и пересборке HNSW (десятки
+   секунд). Для текущего stdio это известное ограничение; для HTTP это риск
+   недоступности на время прогрева. В этой версии HTTP нет.
 
 ## 8. Точки расширения
 

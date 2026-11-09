@@ -121,6 +121,28 @@ BM25 Hit@3 вырос с 93,0 % до 99,7 %; исчезла обрезка ча�
 как путь в live. MultiBERT `hybrid_rerank` не использовать. XML/config_xml
 с cross-encoder отдельно не проверялись и без новой цели не открываются.
 
+### 10. v0.6.0: resources, warmup, typed schemas
+
+Поверхность MCP — 4 tools: `search`, `evaluate_retrieval`, `route_query`,
+`index_stats`. Транспорт — только stdio.
+
+- Ресурсы: `bsl://` (модуль целиком), `metadata://` (карточка объекта из
+  `metadata_xml`), `index://stats`, `index://manifest`. Выдача `search`
+  печатает `uri=`.
+- Фоновый прогрев HNSW, BM25 и e5 после короткой задержки, чтобы handshake
+  stdio успел завершиться.
+- Схемы аргументов типизированы, tools помечены read-only annotations.
+  Сервер по умолчанию не ходит в Hugging Face (`HF_HUB_OFFLINE=1`).
+- Манифест схемы 2: `space` и `sync_threshold` читаются из sqlite, не из
+  переменной окружения. Расхождение — предупреждение, старт не блокируется.
+- Токенные чанкеры BSL и XML добавлены как эксперимент и в обслуживаемый
+  индекс не входят.
+
+Ограничения версии: `bsl://` без выбора процедуры (`?proc` — roadmap);
+прогрев может держать GIL десятки секунд; `config_xml` в текущий индекс
+не входит. Основные коллекции — `code_proc` и `metadata_xml`; legacy
+`code` и `metadata` могут быть пустыми.
+
 ## Отклонённые гипотезы
 
 | Гипотеза | Решение | Причина |

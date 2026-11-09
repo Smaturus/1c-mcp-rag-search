@@ -79,11 +79,11 @@ python scripts\eval_pipeline.py --golden data\eval\gold_set_v2.jsonl --out-dir d
 
 ## MCP-инструменты
 
-Четыре MCP-инструмента:
+Четыре MCP-инструмента. Основные коллекции — `code_proc` и `metadata_xml`. `code` и `metadata` — legacy: могут быть пустыми и как основные не используются (`code`/`metadata` в `search` ведут в канонические коллекции).
 
 | Tool | Назначение |
 | --- | --- |
-| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc` (`code` — синоним), `metadata_xml` (`metadata` — синоним), `all` (merge через `merge.merged_search`, нормализация `max` — ADR 0011); `top_k` 1–50. `config_xml` пока не открыт |
+| `search(query, top_k, mode, collection)` | единый пайплайн: `lexical` / `vector` / `hybrid` (дефолт) / `hybrid_rerank` / `pearson`; `collection`: `code_proc` (`code` — синоним), `metadata_xml` (`metadata` — синоним), `all` (merge через `merge.merged_search`, нормализация `max` — ADR 0011); `top_k` 1–50. `config_xml` в индекс не входит и в поиске не открыт |
 | `evaluate_retrieval(query, k, …)` | Hit@k, Recall@k, MRR, nDCG по одному запросу; `collection`: `code_proc` / `metadata_xml` |
 | `route_query(query)` | маршрут → `tool=search` + `mode` + `collection`, причина и уверенность |
 | `index_stats()` | индекс (каталог, коллекции, размеры, режим) + readiness (`status`), состояние прогрева (`warmup`) и in-memory метрики (`requests_total`, `errors_total`, `latency_ms_*`); текст запросов не отдаёт |
